@@ -10,7 +10,10 @@ def extract_id(url):
     splitted = url.split('/')
     return splitted[-2] + '_' + splitted[-1]
 
-sparql = SPARQLWrapper("http://data.finlex.fi/sparql")
+end_point = "http://data.finlex.fi/sparql"
+filepath = "data/"
+
+sparql = SPARQLWrapper(end_point)
 query = get_judgements(2)
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
@@ -22,5 +25,7 @@ for result in results["results"]["bindings"]:
     id = extract_id(url)
     sparql.setQuery(query)
     content = sparql.query().convert()
-    text = content["results"]["bindings"][0]
-    print(text["content"]["value"])
+    binding = content["results"]["bindings"][0]
+    text = binding["content"]["value"]
+    with open(filepath + id + '.txt', 'a') as out:
+        out.write(text+ '\n')
