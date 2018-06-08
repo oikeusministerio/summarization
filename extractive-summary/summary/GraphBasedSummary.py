@@ -9,6 +9,7 @@ class GraphBasedSummary:
     def __init__(self, text):
         phrases = self.split_document_to_phrases(text)
         assert len(phrases) < 400
+        print(phrases.shape)
         self.phrases = phrases
         self.dumping_factor = 0.85
 
@@ -123,18 +124,24 @@ class GraphBasedSummary:
         res_len = 0
         i = 0
         while (res_len < chars and i < len(df)):
-            res.append((df["phrase"].loc[i], df["position"].loc[i]))
-            res_len += len(df["phrase"].loc[i]) + 2
+            res.append((df["phrase"].iloc[i], df["position"].iloc[i]))
+            res_len += len(df["phrase"].iloc[i]) + 2
             i += 1
         res = np.array(res)
         resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
         ordered_resume = resume.sort_values(by='position', ascending=True)['phrase']
-        return ". ".join(ordered_resume.values)
+        return " ".join(ordered_resume.values)
 
-    def summarize(self, seuil, ranking_method, summary_length=50):
-        self.ranking_method = ranking_method
-        ranking = self.get_ranking(seuil)
+    def summarize(self, threshold, summary_length=50):
+        """
+        :param threshold: minimum similarity value between two sentences
+        :param summary_length: number of characters to use in summary
+        (ATTENTION! As dealing with phrases of different size, the summary procuded will not propably be exactly that length.)
+        :return: summary
+        """
+        ranking = self.get_ranking(threshold)
         df = self.phrases
         df['ranking'] = ranking
-        ordered = df.sort_values(by='ranking', ascending=False)  # ['phrase']
+        ordered = df.sort_values(by='ranking', ascending=False)
+        print(ordered)
         return self.take_paragraphs_until(ordered, summary_length)
