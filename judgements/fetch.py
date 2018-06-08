@@ -1,37 +1,43 @@
 
 from SPARQLWrapper import SPARQLWrapper, JSON
+from sparql_queries import get_judgements, get_judgement_content
+import sys
 
-query = '''
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX sfcl: <http://data.finlex.fi/schema/sfcl/>
+def extract_id(url):
+    """
+    :param url like http://data.finlex.fi/ecli/kko/1998/138:
+    :return: 1998_138
+    """
+    splitted = url.split('/')
+    return splitted[-2] + '_' + splitted[-1]
 
-# Query : List judgments
-SELECT ?j WHERE
-{
-?j rdf:type sfcl:Judgment .
-} LIMIT 3
-'''
+N = 3
+
+if len(sys.argv) > 1:
+    N = int(sys.argv[1])
+
+end_point = "http://data.finlex.fi/sparql"
+filepath = "data/"
 
 
-sparql = SPARQLWrapper("http://data.finlex.fi/sparql")
+sparql = SPARQLWrapper(end_point)
+query = get_judgements(N)
 sparql.setQuery(query)
 sparql.setReturnFormat(JSON)
 results = sparql.query().convert()
 
-fetch_one = '''
-  PREFIX sfcl: <http://data.finlex.fi/schema/sfcl/>
-
-  # Query : Get judgment content
-  SELECT ?content
-  WHERE {
-   <URL/fin/txt> sfcl:text ?content.
-  }
-'''
-
 for result in results["results"]["bindings"]:
     url = result["j"]["value"]
-    sparql.setQuery(fetch_one.replace("URL", url))
+    query = get_judgement_content(url)
+    id = extract_id(url)
+    sparql.setQuery(query)
     content = sparql.query().convert()
-    print(content)
-    #for result in results["results"]["bindings"]:
-    #    print(result)
+    bindings = content["results"]["bindings"]
+    if len(bindings) < 1:
+        print("id " + id)
+        print("No bindings found for this example.")
+        print(bindings)
+        continue
+    text = bindings[0]["content"]["value"]
+    with open(filepath + id + '.txt', 'a') as out:
+        out.write(text+ '\n')
