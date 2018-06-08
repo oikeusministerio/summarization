@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="js/script.js"></script>
+    <title>Title</title>
+</head>
+<body onload="setup()">
+     <form>
+      Tiivistettävä teksti:<br>
+      <textarea id="content" rows="4" cols="50" >Liimaa tiivistettävä teksti tänne.</textarea><br>
+      Tiivistelmän pituus (merkeissä, välillä 50 ja 5000)<br>
+      <input type="number" name="quantity" min="50" max="5000" value="400" id="summary_length"/><br>
+      <input type="submit" value="Lähetä tiivistelmä" id="submit_button"/>
+    </form>
+    <div id="in_progress"></div>
+    <div id="output_div">
+
+    </div>
+</body>
+</html>
