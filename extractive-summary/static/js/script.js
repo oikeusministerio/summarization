@@ -21,7 +21,7 @@ function send(e) {
       document.getElementById("submit_button").disabled = false;
       var data = JSON.parse(this.responseText);
       if(data.success) {
-        showSummary(data.summary);
+        showSummary(data.summary, data.positions);
       } else {
         showError(data.error)
       }
@@ -34,8 +34,11 @@ function showError(text) {
 }
 
 // modify this to more pretty
-function showSummary(text) {
-    document.getElementById("output_div").innerHTML = "TIIVISTELMÄ: \n" + text
+function showSummary(text, positions) {
+    console.log(typeof positions)
+    console.log(typeof positions[0])
+    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> TIIVISTELMÄ: \n" + text
+    document.getElementById("output_div").innerHTML = output
 }
 
 function setup() {

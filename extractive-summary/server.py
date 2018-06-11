@@ -47,8 +47,9 @@ class SummaryAPI(MethodView):
         threshold = float(request.json['minimum_distance'])
         gbs = GraphBasedSummary(text)
 
-        summary = gbs.summarize(threshold, summary_length=length)
-        return json.dumps({'success':True, 'summary':summary}), 201, {'ContentType':'application/json'}
+        summary, positions = gbs.summarize(threshold, summary_length=length)
+        positions = positions.tolist()
+        return json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201, {'ContentType':'application/json'}
 
 summary_view = SummaryAPI.as_view('summaries')
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])

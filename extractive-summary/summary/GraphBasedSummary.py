@@ -129,8 +129,9 @@ class GraphBasedSummary:
             i += 1
         res = np.array(res)
         resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
-        ordered_resume = resume.sort_values(by='position', ascending=True)['phrase']
-        return " ".join(ordered_resume.values)
+        resume['position'] = pd.to_numeric(resume['position'])
+        ordered_resume = resume.sort_values(by='position', ascending=True)
+        return " ".join(ordered_resume['phrase'].values), ordered_resume['position'].values
 
     def summarize(self, threshold, summary_length=50):
         """
