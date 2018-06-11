@@ -3,6 +3,11 @@ from flask import Flask, jsonify,request, send_from_directory, Response
 import json
 from flask.views import MethodView
 from flask_swagger import swagger
+import logging
+
+# prepare nltk
+import nltk
+nltk.download('punkt') # this one installs rules for punctuation
 
 #inner imports
 from summary.GraphBasedSummary import GraphBasedSummary
@@ -66,3 +71,13 @@ def root():
 @app.route("/spec")
 def spec():
     return jsonify(swagger(app))
+
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        # In production mode, add log handler to sys.stderr.
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.INFO)
+
+if __name__ == '__main__':
+    app.run(debug=False,host='0.0.0.0')
