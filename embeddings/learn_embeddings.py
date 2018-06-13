@@ -134,6 +134,7 @@ with graph.as_default():
     # Compute the cosine similarity between minibatch examples and all embeddings.
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
     normalized_embeddings = embeddings / norm
+    
     # Add variable initializer.
     init = tf.global_variables_initializer()
 
