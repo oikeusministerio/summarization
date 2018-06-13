@@ -17,7 +17,6 @@ def load_data(dir_path, N=-1):
             path = os.path.join(dir_path, filename)
             with open(path) as f:
                 text = f.read()
-            print(type(text))
             data.append((filename[:-4], text))
 
     return pd.DataFrame(data, columns = ["id","text"])
