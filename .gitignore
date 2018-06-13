@@ -4,3 +4,5 @@ judgements/data/*
 *.pyc
 .idea
 *.npz
+.ipynb_checkpoints
+*.npy

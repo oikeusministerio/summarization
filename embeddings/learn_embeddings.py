@@ -1,37 +1,51 @@
 
 import os
 import tensorflow as tf
-from sklearn.feature_extraction.text import CountVectorizer
 import math
+from nltk import word_tokenize
 
-from tools import load_data
+from tools import load_data, has_numbers
 import numpy as np
 import collections
 import random
+import sys
+
+texts_N = sys.argv[1] if len(sys.argv) > 1 else -1 # Texts to consider
+vocabulary_size = 50000 # words to consider
+
+# learning params
+batch_size = 128
+embedding_size = 128  # Dimension of the embedding vector.
+skip_window = 1  # How many words to consider left and right.
+num_skips = 2  # How many times to reuse an input to generate a label.
+num_sampled = 64 # Number of negative examples to sample.
+num_steps = 50000
+# directory, where to save embeddings, dictionary and indexes
+data_dir = "data/"
 
 fname = "../judgements/data"
 print("read data from : ", fname)
-texts = load_data('../judgements/data', N=10)
+texts = load_data('../judgements/data', N=texts_N)
 
-# count vocabulary
-'''
-vectorizer = CountVectorizer()
-vectorizer.fit_transform(texts['text'])
-vocabulary = vectorizer.vocabulary_
+all_texts = " ".join(texts['text'].values).lower()
+words = word_tokenize(all_texts, language="finnish")
+print("readed words: " + str(len(words)))
 
-vocabulary_size = len(vocabulary)
-word2index = vocabulary
-index2word = {}
-for w, i in word2index.items():
-    index2word[i] = w
-'''
-
-vocabulary_size = 50000
-
-words = " ".join(texts['text'].values)
+def word_is_valid(word):
+    """
+    Put here all rules for words that should be skipped.
+    :param word:
+    :return: false if word is not useful
+    """
+    if len(word) < 2:
+        return False
+    if has_numbers(word):
+        return False
+    return True
 
 def build_dataset(words, n_words):
     """Process raw inputs into a dataset."""
+    words = [w for w in words if word_is_valid(w)]
     count = [['UNK', -1]]
     count.extend(collections.Counter(words).most_common(n_words - 1))
     dictionary = dict()
@@ -50,17 +64,11 @@ def build_dataset(words, n_words):
 
 data, count, dictionary, reverse_dictionary = build_dataset(words, vocabulary_size)
 
-
-# tensorflow
-batch_size = 32
-embedding_size = 32  # Dimension of the embedding vector.
-skip_window = 1  # How many words to consider left and right.
-num_skips = 2  # How many times to reuse an input to generate a label.
-num_sampled = 16 # Number of negative examples to sample.
+#import pdb; pdb.set_trace()
 
 #learn
 data_index = 0
-# Step 3: Function to generate a training batch for the skip-gram model.
+# Function to generate a training batch for the skip-gram model.
 def generate_batch(batch_size, num_skips, skip_window):
     global data_index
     assert batch_size % num_skips == 0
@@ -130,7 +138,6 @@ with graph.as_default():
     init = tf.global_variables_initializer()
 
 with tf.Session(graph=graph) as session:
-    num_steps = 50000
 
     init.run()
 
@@ -145,4 +152,5 @@ with tf.Session(graph=graph) as session:
 
 
 print("Finished, save to file")
-np.savez("embeddings", final_embeddings)
+np.save(data_dir + "embeddings", final_embeddings)
+np.save(data_dir + "dictionary", dictionary)
