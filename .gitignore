@@ -6,3 +6,4 @@ judgements/data/*
 *.npz
 .ipynb_checkpoints
 *.npy
+*sandbox.ipynb
