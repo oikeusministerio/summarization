@@ -31,3 +31,15 @@ def is_number(s):
 
 def has_numbers(inputString):
     return bool(re.search(r'\d', inputString))
+
+def word_is_valid(word):
+    """
+    Put here all rules for words that should be skipped.
+    :param word:
+    :return: false if word is not useful
+    """
+    if len(word) < 2:
+        return False
+    if has_numbers(word):
+        return False
+    return True
