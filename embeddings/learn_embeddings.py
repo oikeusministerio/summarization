@@ -10,8 +10,14 @@ import collections
 import random
 import sys
 
-texts_N = sys.argv[1] if len(sys.argv) > 1 else -1 # Texts to consider
+if len(sys.argv) < 3:
+    print("Please give the path to texts and destination for the embeddings.")
+    sys.exit(0)
+
+fname = sys.argv[1] # "../judgements/data"
 vocabulary_size = 50000 # words to consider
+# directory, where to save embeddings 0and dictionary
+data_dir =  sys.argv[2] # "data/"
 
 # learning params
 batch_size = 128
@@ -20,12 +26,9 @@ skip_window = 1  # How many words to consider left and right.
 num_skips = 2  # How many times to reuse an input to generate a label.
 num_sampled = 64 # Number of negative examples to sample.
 num_steps = 50000
-# directory, where to save embeddings, dictionary and indexes
-data_dir = "data/"
 
-fname = "../judgements/data"
 print("read data from : ", fname)
-texts = load_data('../judgements/data', N=texts_N)
+texts = load_data(fname)
 
 all_texts = " ".join(texts['text'].values).lower()
 words = word_tokenize(all_texts, language="finnish")
