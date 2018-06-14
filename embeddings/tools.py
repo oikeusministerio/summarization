@@ -1,6 +1,7 @@
 
 import pandas as pd
 import os
+import re
 
 def load_data(dir_path, N=-1):
     """
@@ -17,7 +18,16 @@ def load_data(dir_path, N=-1):
             path = os.path.join(dir_path, filename)
             with open(path) as f:
                 text = f.read()
-            print(type(text))
             data.append((filename[:-4], text))
 
     return pd.DataFrame(data, columns = ["id","text"])
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def has_numbers(inputString):
+    return bool(re.search(r'\d', inputString))

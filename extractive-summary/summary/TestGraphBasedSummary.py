@@ -1,7 +1,7 @@
 
 import numpy as np
 import unittest
-from summary.GraphBasedSummary import GraphBasedSummary
+from .GraphBasedSummary import GraphBasedSummary
 
 class TestGraphBasedSummary(unittest.TestCase):
 

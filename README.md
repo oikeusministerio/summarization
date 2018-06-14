@@ -21,3 +21,7 @@ when server running, post a text to summarize:
 curl --header "Content-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":30, "minimum_distance":0.1}' http://localhost:5000/summarize
 ```
 
+Run tests
+```
+python3.5 -m unittest extractive-summary/summary/Test*
+```

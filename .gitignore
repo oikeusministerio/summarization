@@ -2,3 +2,8 @@
 */__pycache__
 judgements/data/*
 *.pyc
+.idea
+*.npz
+.ipynb_checkpoints
+*.npy
+*sandbox.ipynb
