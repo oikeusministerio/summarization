@@ -18,21 +18,25 @@ class EmbeddingsBasedSummary:
     Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.
     """
 
-    def __init__(self, text, dictionary_file=None):
-        self.phrases, self.words = self.split_document(text)
-        self.r = 0.85 # scaling factor
-        self.redis_address = "localhost"
-        if dictionary_file != None:
+    def __init__(self, text, dictionary_file=None, dictionary=None):
+        assert (dictionary_file != None or dictionary != None)
+        if dictionary != None:
+            self.dictionary = dictionary
+        else:
             self.dictionary = np.load(dictionary_file).item()
-            self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
+        self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
+        self.phrases, self.words = self.split_document(text)
+        self.r = 0.5 # scaling factor
+        self.redis_address = "localhost"
+        self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
 
     def split_document(self, text):
-        phrases = sent_tokenize(text, language="finnish")
+        sentences = sent_tokenize(text, language="finnish")
         words = word_tokenize(text, language="finnish")
-        words = np.array([w.lower() for w in words if word_is_valid(w)])
-        words = np.unique(words)
-        # add id to give order for phrases later
-        return pd.DataFrame({'position': np.arange(len(phrases)), 'sentences': np.array(phrases)}), words
+        words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
+        words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
+        sentences = [s for s in sentences if len(s) > 3]
+        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': np.array(sentences)}), words
 
     def nearest_neighbor_objective_function(self, candidate_summary):
         """
@@ -41,7 +45,17 @@ class EmbeddingsBasedSummary:
         :param candidate_summary: list of words => current summary in iterative optimisation process
         :return: negative distance between candidate and phrases
         """
-        return -sum([self.embeddings.similarity_word_to_text(word, candidate_summary) for word in self.words])
+        candidate_summary_indexes = np.array([self.distance_index_mapping[self.dictionary[w.lower()]] \
+                                              for w in candidate_summary if w.lower() in self.dictionary])
+        if candidate_summary_indexes.shape[0] == 0:
+            import pdb;
+            pdb.set_trace()
+            print(candidate_summary_indexes.shape)
+        candidate_document_distances = self.distances[:, candidate_summary_indexes]
+
+        nearests_document_word_distances = candidate_document_distances.min(axis=1)
+        # add here scaling function
+        return -nearests_document_word_distances.sum()
 
     def split_sentences(self,sentences):
         """
@@ -63,7 +77,6 @@ class EmbeddingsBasedSummary:
         candidate_word_count = 0
 
         while(len(sentences_left) > 0):
-            print(candidate_summary.shape)
             s_candidates = np.array([
                 self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) / len(s) ** self.r \
                 for s in sentences_left])
@@ -77,9 +90,10 @@ class EmbeddingsBasedSummary:
             sentences_left = np.delete(sentences_left, s_star_i)
 
         # then let's consider sentence, that is the best all alone, algorithm line 6
+        sentences_left = self.phrases['sentences'].values
         s_candidates = np.array([
-            self.nearest_neighbor_objective_function(self.split_sentences(s)) \
-            for s in self.phrases['sentences'].values if len(s) <= summary_size])
+            self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) \
+            for s in sentences_left if len(s) <= summary_size])
         s_star = sentences_left[s_candidates.argmax()]
 
         # and now choose eiher the best sentence or combination, algorithm line 7
@@ -95,7 +109,7 @@ class EmbeddingsBasedSummary:
         :param words:
         :return: distances and transformations for indexes
         """
-        connection = redis.Redis(self.redis_address)
+        connection = redis.Redis(self.redis_address, db=0)
         indexes = np.array([self.dictionary[w] for w in words])
 
         N = len(indexes)
@@ -106,6 +120,7 @@ class EmbeddingsBasedSummary:
             submatrix_indexes[ind] = i
             b_word_distances = connection.get(ind)
             word_distances = np.array(pickle.loads(b_word_distances))
-            distance_matrix[i] = word_distances[indexes]
+
+            distance_matrix[i] = word_distances[0, indexes]
 
         return distance_matrix, submatrix_indexes

@@ -30,12 +30,11 @@ class TestEmbeddingsBasedSummary(unittest.TestCase):
         # prepare test db
         distances = [[0,1,2],[3,0,4],[5,6,0]]
         for i, dist in enumerate(distances):
-            connection.set(i, pickle.dumps(dist))
+            connection.set(i, pickle.dumps(np.array(dist).reshape(1,-1)))
 
         text = "eka toka. kolmas eka."
         dictionary = {"eka":0,"toka":1,"kolmas":2}
-        summary = EmbeddingsBasedSummary(text)
-        summary.dictionary = dictionary
+        summary = EmbeddingsBasedSummary(text, dictionary=dictionary)
 
         expected_result = np.array(distances)[0:2,0:2]
         sub_distance_mat,_ = summary.fetch_distances(["eka","toka"])
