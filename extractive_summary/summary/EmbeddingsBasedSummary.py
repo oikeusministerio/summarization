@@ -1,4 +1,6 @@
 
+import redis
+import pickle
 import numpy as np
 import pandas as pd
 from nltk import sent_tokenize, word_tokenize
@@ -16,17 +18,21 @@ class EmbeddingsBasedSummary:
     Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.
     """
 
-    def __init__(self, text, embeddings):
+    def __init__(self, text, dictionary_file=None):
         self.phrases, self.words = self.split_document(text)
-        self.embeddings = embeddings
         self.r = 0.85 # scaling factor
+        self.redis_address = "localhost"
+        if dictionary_file != None:
+            self.dictionary = np.load(dictionary_file).item()
+            self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
 
     def split_document(self, text):
         phrases = sent_tokenize(text, language="finnish")
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if word_is_valid(w)])
+        words = np.unique(words)
         # add id to give order for phrases later
-        return pd.DataFrame({'position': np.arange(len(phrases)), 'phrase': np.array(phrases)}), words
+        return pd.DataFrame({'position': np.arange(len(phrases)), 'sentences': np.array(phrases)}), words
 
     def nearest_neighbor_objective_function(self, candidate_summary):
         """
@@ -52,32 +58,54 @@ class EmbeddingsBasedSummary:
         :param summary_size: the size of summary to be made
         :return: summary
         """
-        phrases_left = self.phrases['phrase'].values # U in algorithm
+        sentences_left = self.phrases['sentences'].values # U in algorithm
         candidate_summary = np.array([]) # C in algorithm
         candidate_word_count = 0
 
-        while(len(phrases_left) > 0):
+        while(len(sentences_left) > 0):
             print(candidate_summary.shape)
             s_candidates = np.array([
-                self.nearest_neighbor_objective_function(self.split_sentences(np.append(candidate_summary, s))) / len(s) ** self.r \
-                for s in phrases_left])
+                self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) / len(s) ** self.r \
+                for s in sentences_left])
             s_star_i = s_candidates.argmax()
-            s_star = phrases_left[s_star_i]
+            s_star = sentences_left[s_star_i]
 
             if candidate_word_count + len(s_star)  <= summary_size:
                 candidate_summary = np.append(candidate_summary, s_star)
                 candidate_word_count += len(s_star)
 
-            phrases_left = np.delete(phrases_left, s_star_i)
+            sentences_left = np.delete(sentences_left, s_star_i)
 
         # then let's consider sentence, that is the best all alone, algorithm line 6
         s_candidates = np.array([
-            self.nearest_neighbor_objective_function(self.split_sentences(np.append(candidate_summary, s))) \
-            for s in self.phrases['phrase'].values if len(s) <= summary_size])
-        s_star = phrases_left[s_candidates.argmax()]
+            self.nearest_neighbor_objective_function(self.split_sentences(s)) \
+            for s in self.phrases['sentences'].values if len(s) <= summary_size])
+        s_star = sentences_left[s_candidates.argmax()]
 
         # and now choose eiher the best sentence or combination, algorithm line 7
         if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
             return s_star
         else:
             return candidate_summary
+
+    def fetch_distances(self, words):
+        """
+        Connects to redis database, that is supposed to contain distances between all words, and fetches only words needed.
+        Vocabulary of each individuel text is supposed to contain so few words that they fit to memory.
+        :param words:
+        :return: distances and transformations for indexes
+        """
+        connection = redis.Redis(self.redis_address)
+        indexes = np.array([self.dictionary[w] for w in words])
+
+        N = len(indexes)
+        distance_matrix = np.zeros((N,N))
+
+        submatrix_indexes = {}
+        for i,ind in enumerate(indexes):
+            submatrix_indexes[ind] = i
+            b_word_distances = connection.get(ind)
+            word_distances = np.array(pickle.loads(b_word_distances))
+            distance_matrix[i] = word_distances[indexes]
+
+        return distance_matrix, submatrix_indexes

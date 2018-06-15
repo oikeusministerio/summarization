@@ -1,37 +1,22 @@
 
-import tensorflow as tf
+import redis
 import numpy as np
+import pickle
+from sklearn.metrics.pairwise import euclidean_distances
 
 embed_file="data/embeddings.npy"
-embeddings_values = np.load(embed_file)
-
-embeddings_N = embeddings_values.shape[0]
-embeddings_dim = embeddings_values.shape[1]
+embeddings = np.load(embed_file)
 
 #import pdb; pdb.set_trace()
 
-graph = tf.Graph()
+connection = redis.Redis('localhost')
 
-with graph.as_default():
-    # Placeholders for inputs
-    with tf.name_scope('inputs'):
-        embeddings = tf.placeholder(tf.float32, shape=[embeddings_N,embeddings_dim])
+for w1 in range(len(embeddings)):
+    if w1 % 100 == 0:
+        print(w1)
 
-    with tf.device('/gpu:0'):
-        similarity = tf.matmul(embeddings, embeddings, transpose_b=True)
+    distances = euclidean_distances(embeddings[w1, :].reshape(1, -1), embeddings)
+    distances[0, w1] = 0 # diagonal is zero
 
-    # Add variable initializer.
-    init = tf.global_variables_initializer()
-
-
-with tf.Session(graph=graph) as session:
-
-    init.run()
-
-    feed_dict = {embeddings: embeddings_values}
-    sim = session.run(similarity, feed_dict=feed_dict)
-
-    print(sim.shape)
-    #top_k = 8  # number of nearest neighbors
-    #nearest = (-sim[i, :]).argsort()[1:top_k + 1]
-    #log_str = 'Nearest to %s:' % valid_word
+    p_dist = pickle.dumps(distances)
+    connection.set(w1, p_dist)
