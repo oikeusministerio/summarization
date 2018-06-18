@@ -4,8 +4,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 class EmbeddingsReader:
 
-    def __init__(self, embed_file = "../../embeddings/data/embeddings.npy", \
-                 dico_file="../../embeddings/data/dictionary.npy"):
+    def __init__(self, embed_file = None, \
+                 dico_file=None):
         if embed_file is not None and dico_file is not None:
             self.embeddings = np.load(embed_file)
             self.dictionary = np.load(dico_file).item()
@@ -35,6 +35,13 @@ class EmbeddingsReader:
         """
         i = self.dictionary[word]
         w = self.embeddings[i].reshape(1, -1)
-        text_embeddings = [self.embeddings[self.dictionary[wi]] for wi in text if wi in self.dictionary]
+
+        try:
+            text[0].lower()
+        except:
+            import pdb;
+            pdb.set_trace()
+
+        text_embeddings = [self.embeddings[self.dictionary[wi.lower()]] for wi in text if wi.lower() in self.dictionary]
         dist = euclidean_distances(w, text_embeddings)
         return dist.min()

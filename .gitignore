@@ -7,4 +7,5 @@ judgements/data/*
 .ipynb_checkpoints
 *.npy
 *sandbox.ipynb
-sandbox.py
+*sandbox.py
+*.ipynb
