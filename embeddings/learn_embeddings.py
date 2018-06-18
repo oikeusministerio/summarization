@@ -4,11 +4,12 @@ import tensorflow as tf
 import math
 from nltk import word_tokenize
 
-from tools import load_data, has_numbers
 import numpy as np
 import collections
 import random
 import sys
+sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
+from summarization.tools import load_data, word_is_valid
 
 if len(sys.argv) < 3:
     print("Please give the path to texts and destination for the embeddings.")
@@ -33,18 +34,6 @@ texts = load_data(fname)
 all_texts = " ".join(texts['text'].values).lower()
 words = word_tokenize(all_texts, language="finnish")
 print("readed words: " + str(len(words)))
-
-def word_is_valid(word):
-    """
-    Put here all rules for words that should be skipped.
-    :param word:
-    :return: false if word is not useful
-    """
-    if len(word) < 2:
-        return False
-    if has_numbers(word):
-        return False
-    return True
 
 def build_dataset(words, n_words):
     """Process raw inputs into a dataset."""

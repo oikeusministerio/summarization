@@ -26,7 +26,7 @@ or visit http:localhost:5000.
 
 #### Run tests
 ```
-python3 -m unittest extractive-summary/summary/Test*
+python3 -m unittest extractive_summary/summary/Test*
 ```
 
 ## embeddings
