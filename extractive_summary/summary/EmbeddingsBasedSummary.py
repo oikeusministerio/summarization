@@ -65,12 +65,11 @@ class EmbeddingsBasedSummary:
         """
         candidate_summary_indexes = np.array([self.distance_index_mapping[self.dictionary[w.lower()]] \
                                               for w in candidate_summary if w.lower() in self.dictionary])
-        if candidate_summary_indexes.shape[0] == 0:
-            import pdb;
-            pdb.set_trace()
-            print(candidate_summary_indexes.shape)
         candidate_document_distances = self.distances[:, candidate_summary_indexes]
-
+        # before selecting minimun distances, let's avoid selecting, that the nearest one is the point himself
+        cand_sums = candidate_document_distances[candidate_summary_indexes]
+        np.fill_diagonal(cand_sums, 1000) # let's put big value so that diagonal will not be chosen
+        candidate_document_distances[candidate_summary_indexes] = cand_sums
         nearests_document_word_distances = candidate_document_distances.min(axis=1)
         # add here scaling function
         return -nearests_document_word_distances.sum()
