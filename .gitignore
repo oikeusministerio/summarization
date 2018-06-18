@@ -8,3 +8,4 @@ judgements/data/*
 *.npy
 *sandbox.ipynb
 *sandbox.py
+*.ipynb

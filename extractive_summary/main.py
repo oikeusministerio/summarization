@@ -1,6 +1,6 @@
 
 import sys
-from tools import load_data
+from tools.tools import load_data
 from summary.GraphBasedSummary import GraphBasedSummary
 import nltk
 nltk.download('punkt') # this one installs rules for punctuation

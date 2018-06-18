@@ -1,5 +1,7 @@
 
 import sys
+import os
+sys.path.append(os.path.abspath('../tools'))
 from tools import load_data
 import nltk
 nltk.download('punkt') # this one installs rules for punctuation
