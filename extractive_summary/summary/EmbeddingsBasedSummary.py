@@ -6,6 +6,7 @@ import pandas as pd
 from nltk import sent_tokenize, word_tokenize
 import sys
 import os
+import json
 sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
 from summarization.tools import word_is_valid
 
@@ -18,7 +19,7 @@ class EmbeddingsBasedSummary:
     Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.
     """
 
-    def __init__(self, text, dictionary_file=None, dictionary=None):
+    def __init__(self, text, dictionary_file=None, dictionary=None, redis_client_constructor=None):
         assert (dictionary_file != None or dictionary != None)
         if dictionary != None:
             self.dictionary = dictionary
@@ -27,16 +28,33 @@ class EmbeddingsBasedSummary:
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
         self.phrases, self.words = self.split_document(text)
         self.r = 0.5 # scaling factor
-        self.redis_address = "localhost"
-        self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
+        with open('extractive_summary/config.json', 'r') as f:
+            config = json.load(f)
+            self.redis_address = config["redis_address"]
+            self.redis_port = config["redis_port"]
+            self.get_redis_client = redis_client_constructor if redis_client_constructor != None else self.redis_client
+            self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
 
-    def split_document(self, text):
+    def split_document(self, text, minimum_sentence_length=3):
         sentences = sent_tokenize(text, language="finnish")
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
-        sentences = [s for s in sentences if len(s) > 3]
-        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': np.array(sentences)}), words
+        sentences = [s for s in sentences if len(s) >= minimum_sentence_length]
+
+        sentences_without_newlines = []
+        for s in sentences:
+            s = s.strip()
+            if "\n" in s:
+                for split in s.split("\n"):
+                    split = split.strip()
+                    if len(split) >= minimum_sentence_length:
+                        sentences_without_newlines.append(split)
+            else:
+                sentences_without_newlines.append(s)
+
+        sentences = np.array(sentences_without_newlines)
+        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': sentences}), words
 
     def nearest_neighbor_objective_function(self, candidate_summary):
         """
@@ -102,6 +120,12 @@ class EmbeddingsBasedSummary:
         else:
             return candidate_summary
 
+    def summarize(self, summary_size = 1000):
+        return self.modified_greedy_algrorithm(summary_size=summary_size)
+
+    def redis_client(self):
+        return redis.Redis(self.redis_address, port=self.redis_port)
+
     def fetch_distances(self, words):
         """
         Connects to redis database, that is supposed to contain distances between all words, and fetches only words needed.
@@ -109,7 +133,7 @@ class EmbeddingsBasedSummary:
         :param words:
         :return: distances and transformations for indexes
         """
-        connection = redis.Redis(self.redis_address, db=0)
+        connection = self.get_redis_client()
         indexes = np.array([self.dictionary[w] for w in words])
 
         N = len(indexes)
@@ -121,6 +145,6 @@ class EmbeddingsBasedSummary:
             b_word_distances = connection.get(ind)
             word_distances = np.array(pickle.loads(b_word_distances))
 
-            distance_matrix[i] = word_distances[0, indexes]
+            distance_matrix[i] = word_distances[0, indexes] # distance vector vector size of (1,50000)
 
         return distance_matrix, submatrix_indexes
