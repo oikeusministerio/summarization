@@ -1,4 +1,6 @@
 {
   "redis_address": "localhost",
-  "redis_port": "6379"
+  "redis_port": "6379",
+  "dictionary_file": "embeddings/data/dictionary.npy"
+
 }

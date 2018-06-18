@@ -12,7 +12,7 @@ cd judgements
 
 #### Start server:
 ```
-cd extractive-summary
+cd extractive_summary
 ./run_script.sh
 ```
 
@@ -31,10 +31,12 @@ python3 -m unittest extractive_summary/summary/Test*
 
 ## embeddings
 
+Add correct Redis address and port to extractive_summary/config.json.
+
 Train embeddings
 
 ```
-cd embeddings
-python3 learn_embeddings.py "../judgements/data" "data/"
+python3 embeddings/learn_embeddings.py "../judgements/data" "data/"
+python3 embeddings/calcul_distances.py
 ```
 where first parameter is the location of texts used for training and second one is the destination of embeddings and dictionary.

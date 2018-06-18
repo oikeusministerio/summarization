@@ -3,10 +3,12 @@ function send(e) {
     e.preventDefault();
     document.getElementById("submit_button").disabled = true;
 
-    content = document.getElementById("content").value
+    var content = document.getElementById("content").value
     document.getElementById("output_div").innerHTML = ""
-    summary_length = document.getElementById("summary_length").value
+    var summary_length = document.getElementById("summary_length").value
     document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
+
+    var method = document.querySelector('input[name="method"]:checked').value;
 
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "http://localhost:5000/summarize", true);
@@ -14,7 +16,8 @@ function send(e) {
     xhr.send(JSON.stringify({
         content: content,
         summary_length: summary_length,
-        minimum_distance: 0.1
+        minimum_distance: 0.1,
+        method: method
     }));
     xhr.onload = function() {
       document.getElementById("in_progress").innerHTML = ""

@@ -1,0 +1,16 @@
+
+#wrapper {
+  text-align: center;
+}
+#app_form {
+  display: inline-block;
+}
+
+#header {
+    height: 100px
+}
+
+textarea {
+  width: 600px;
+  height: 400px;
+}

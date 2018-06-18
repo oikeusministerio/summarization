@@ -4,11 +4,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from nltk import sent_tokenize, word_tokenize
-import sys
-import os
 import json
-sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
-from summarization.tools import word_is_valid
 
 class EmbeddingsBasedSummary:
     """
@@ -115,9 +111,19 @@ class EmbeddingsBasedSummary:
 
         # and now choose eiher the best sentence or combination, algorithm line 7
         if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
-            return s_star
+            position = 0
+            for i,s in enumerate(self.phrases["sentences"]):
+                if s == s_star:
+                    position = i
+            return s_star, np.array(position)
         else:
-            return candidate_summary
+            positions = []
+            for chosen in candidate_summary:
+                for i, s in enumerate(self.phrases["sentences"]):
+                    if s == chosen:
+                        positions.append(i)
+                        break;
+            return candidate_summary, np.array(positions)
 
     def summarize(self, summary_size = 1000):
         return self.modified_greedy_algrorithm(summary_size=summary_size)

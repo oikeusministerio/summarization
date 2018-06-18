@@ -4,17 +4,24 @@ import json
 from flask.views import MethodView
 from flask_swagger import swagger
 import logging
+import os,sys
 
 # prepare nltk
 import nltk
 nltk.download('punkt') # this one installs rules for punctuation
 
 #inner imports
-from summary.GraphBasedSummary import GraphBasedSummary
+sys.path.append(os.path.abspath('..'))
+from .Summarizer import Summarizer
 
 app = Flask(__name__, static_url_path='')
 
 class SummaryAPI(MethodView):
+
+    def __init__(self):
+        with open('extractive_summary/config.json', 'r') as f:
+            config = json.load(f)
+            self.summarizer = Summarizer(config)
 
     def post(self):
         """
@@ -30,6 +37,7 @@ class SummaryAPI(MethodView):
               required:
                 - content
                 - summary_length
+                - method
               properties:
                 content:
                   type: string
@@ -39,20 +47,25 @@ class SummaryAPI(MethodView):
                   description: maximum number of characters to use in summary
                 minimum_distance:
                   type: float
-                  description: minimum distance between two sentences. 0.1 seems to be best.
+                  description: minimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
+                method:
+                  type: string
+                  description: what method is used to create summary
           201:
             description: Summary created
         """
-        if 'content' not in request.json or 'summary_length' not in request.json or 'minimum_distance' not in request.json:
+        if 'content' not in request.json or 'summary_length' not in request.json or 'minimum_distance' not in request.json or 'method' not in request.json:
             # body should be validated by swagger, but this works also
             return json.dumps({'success':False, 'error':'Please provide content, summary length and minimum_distance'}), 404, {'ContentType':'application/json'}
+
 
         text = request.json['content']
         length = int(request.json['summary_length'])
         threshold = float(request.json['minimum_distance'])
-        gbs = GraphBasedSummary(text)
+        method = request.json["method"]
 
-        summary, positions = gbs.summarize(threshold, summary_length=length)
+        summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
+
         positions = positions.tolist()
         return json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201, {'ContentType':'application/json'}
 

@@ -3,19 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <script src="js/script.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
     <title>Title</title>
 </head>
 <body onload="setup()">
-     <form>
-      Tiivistettävä teksti:<br>
-      <textarea id="content" rows="4" cols="50" >Liimaa tiivistettävä teksti tänne.</textarea><br>
-      Tiivistelmän pituus (merkeissä, välillä 50 ja 5000)<br>
-      <input type="number" name="quantity" min="50" max="5000" value="400" id="summary_length"/><br>
-      <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
-    </form>
-    <div id="in_progress"></div>
-    <div id="output_div">
+    <div id="header"></div>
+    <div id="wrapper">
+        <div id="app_form">
+             <form>
+                 <h2>Tiivistettävä teksti:</h2><br>
+                  <textarea id="content" rows="4" cols="50" >Liimaa tiivistettävä teksti tänne.</textarea><br>
+                  <p>
+                      Tiivistelmän pituus (merkeissä, välillä 50 ja 5000)
+                      <input type="number" name="quantity" min="50" max="5000" value="500" id="summary_length"/>
+                  </p><br>
+                  <p>
+                      Käytettävä tiivistysmenetelmä :
+                      <div>
+                          <input type="radio" name="method" value="graph" checked id="graph"> <label for="graph">Verkkoon perustuva (graph)</label>
+                          <input type="radio" name="method" value="embedding" id="embedding"> <label for="embedding"> Sanavektoreihin perustuva (word embeddings) </label><br>
+                      </div>
+                  </p><br>
+                  <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
+            </form>
+            <div id="in_progress"></div>
+            <div id="output_div">
 
+            </div>
+        </div>
+        <div id="header"></div>
+        <hr></hr>
+        <p>Menetelmä graph : Erkan, Günes, and Dragomir R. Radev. "Lexrank: Graph-based lexical centrality as salience in text summarization." journal of artificial intelligence research 22 (2004): 457-479.</p>
+        <p>Menetelmä word embeddings : Kobayashi, Hayato, Masaki Noguchi, and Taichi Yatsuka. "Summarization based on embedding distributions." Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.</p>
     </div>
 </body>
 </html>
