@@ -11,8 +11,8 @@ import nltk
 nltk.download('punkt') # this one installs rules for punctuation
 
 #inner imports
-sys.path.append(os.path.abspath('..'))
-from .Summarizer import Summarizer
+#sys.path.append(os.path.abspath('..'))
+from extractive_summary.Summarizer import Summarizer
 
 app = Flask(__name__, static_url_path='')
 
