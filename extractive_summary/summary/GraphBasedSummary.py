@@ -16,7 +16,7 @@ class GraphBasedSummary:
 
     def split_document_to_phrases(self, text):
         phrases = sent_tokenize(text)
-        # add id to give order for phrases later
+        # add id to give order for sentences later
         return pd.DataFrame({'position': np.arange(len(phrases)), 'phrase': np.array(phrases)})
 
     def power_iteration(self, N, M, num_simulations):
@@ -138,7 +138,7 @@ class GraphBasedSummary:
         """
         :param threshold: minimum similarity value between two sentences
         :param summary_length: number of characters to use in summary
-        (ATTENTION! As dealing with phrases of different size, the summary procuded will not propably be exactly that length.)
+        (ATTENTION! As dealing with sentences of different size, the summary procuded will not propably be exactly that length.)
         :return: summary
         """
         ranking = self.get_ranking(self.threshold)

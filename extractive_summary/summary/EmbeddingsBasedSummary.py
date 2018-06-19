@@ -22,7 +22,7 @@ class EmbeddingsBasedSummary:
         else:
             self.dictionary = np.load(dictionary_file).item()
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
-        self.phrases, self.words = self.split_document(text)
+        self.sentences, self.words = self.split_document(text)
         self.r = 0.5 # scaling factor
         with open('extractive_summary/config.json', 'r') as f:
             config = json.load(f)
@@ -31,7 +31,7 @@ class EmbeddingsBasedSummary:
             self.get_redis_client = redis_client_constructor if redis_client_constructor != None else self.redis_client
             self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
 
-    def split_document(self, text, minimum_sentence_length=3):
+    def split_document(self, text, minimum_sentence_length=5):
         sentences = sent_tokenize(text, language="finnish")
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
@@ -57,10 +57,14 @@ class EmbeddingsBasedSummary:
         Counts the distance between candidate_summary and document (words of original document).
 
         :param candidate_summary: list of words => current summary in iterative optimisation process
-        :return: negative distance between candidate and phrases
+        :return: negative distance between candidate and sentences
         """
         candidate_summary_indexes = np.array([self.distance_index_mapping[self.dictionary[w.lower()]] \
                                               for w in candidate_summary if w.lower() in self.dictionary])
+
+        if len(candidate_summary_indexes) == 0: # this shouldn't hopyfully happen, that we have sentence without any word in dictionary. But just in case
+            return -1000000 # let's not choose sentences that contains no known words
+
         candidate_document_distances = self.distances[:, candidate_summary_indexes]
         # before selecting minimun distances, let's avoid selecting, that the nearest one is the point himself
         cand_sums = candidate_document_distances[candidate_summary_indexes]
@@ -69,6 +73,17 @@ class EmbeddingsBasedSummary:
         nearests_document_word_distances = candidate_document_distances.min(axis=1)
         # add here scaling function
         return -nearests_document_word_distances.sum()
+
+    def get_positions(self, candidate_summary):
+        positions = []
+        for chosen in candidate_summary:
+            for i, s in enumerate(self.sentences["sentences"]):
+                if s == chosen:
+                    positions.append(i)
+                    break;
+        df = pd.DataFrame({"sentences":np.array(candidate_summary), "positions":np.array(positions)})
+        df = df.sort_values(by = "positions")
+        return df["sentences"].values, df["positions"].values
 
     def split_sentences(self,sentences):
         """
@@ -85,7 +100,7 @@ class EmbeddingsBasedSummary:
         :param summary_size: the size of summary to be made
         :return: summary
         """
-        sentences_left = self.phrases['sentences'].values # U in algorithm
+        sentences_left = self.sentences['sentences'].values # U in algorithm
         candidate_summary = np.array([]) # C in algorithm
         candidate_word_count = 0
 
@@ -103,7 +118,7 @@ class EmbeddingsBasedSummary:
             sentences_left = np.delete(sentences_left, s_star_i)
 
         # then let's consider sentence, that is the best all alone, algorithm line 6
-        sentences_left = self.phrases['sentences'].values
+        sentences_left = self.sentences['sentences'].values
         s_candidates = np.array([
             self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) \
             for s in sentences_left if len(s) <= summary_size])
@@ -111,19 +126,9 @@ class EmbeddingsBasedSummary:
 
         # and now choose eiher the best sentence or combination, algorithm line 7
         if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
-            position = 0
-            for i,s in enumerate(self.phrases["sentences"]):
-                if s == s_star:
-                    position = i
-            return s_star, np.array(position)
+            return self.get_positions(np.array([s_star]))
         else:
-            positions = []
-            for chosen in candidate_summary:
-                for i, s in enumerate(self.phrases["sentences"]):
-                    if s == chosen:
-                        positions.append(i)
-                        break;
-            return candidate_summary, np.array(positions)
+            return self.get_positions(candidate_summary)
 
     def summarize(self, summary_size = 1000):
         return self.modified_greedy_algrorithm(summary_size=summary_size)
