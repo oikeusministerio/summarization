@@ -58,10 +58,14 @@ class SummaryAPI(MethodView):
             # body should be validated by swagger, but this works also
             return json.dumps({'success':False, 'error':'Please provide content, summary length and minimum_distance'}), 404, {'ContentType':'application/json'}
 
+        try:
+            length = int(request.json['summary_length'])
+            threshold = float(request.json['minimum_distance'])
+        except ValueError:
+            return json.dumps({'success': False, 'error': 'Summary length should be integer'}), 404, {'ContentType': 'application/json'}
 
         text = request.json['content']
-        length = int(request.json['summary_length'])
-        threshold = float(request.json['minimum_distance'])
+
         method = request.json["method"]
 
         summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)

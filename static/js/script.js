@@ -33,13 +33,13 @@ function send(e) {
 
 // modify this to more pretty
 function showError(text) {
-    document.getElementById("output_div").innerHTML = text
+    document.getElementById("error_output").innerHTML = text
+    document.getElementById("output_div").innerHTML = ""
 }
 
 // modify this to more pretty
 function showSummary(text, positions) {
-    console.log(typeof positions)
-    console.log(typeof positions[0])
+    document.getElementById("error_output").innerHTML = ""
     var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> TIIVISTELMÄ: \n" + text
     document.getElementById("output_div").innerHTML = output
 }
