@@ -25,7 +25,7 @@ or visit http:localhost:5000 with browser.
 
 To send text file for summarization, use
 ```
-curl -v -F file=@testi.doc http://localhost:5000/summarize/file
+curl -v -F file=@testi.docx http://localhost:5000/summarize/file
 ```
 
 #### Run tests

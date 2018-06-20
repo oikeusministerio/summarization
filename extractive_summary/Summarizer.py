@@ -11,4 +11,4 @@ class Summarizer:
         summary_method = GraphBasedSummary(text, threshold=threshold) \
             if method == "graph" else EmbeddingsBasedSummary(text, dictionary_file=self.dictionary_file)
         sentences, positions = summary_method.summarize(summary_length=length)
-        return " ".join(sentences), positions
+        return " ".join(sentences), [int(p) for p in positions]

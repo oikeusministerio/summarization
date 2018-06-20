@@ -9,7 +9,6 @@ class GraphBasedSummary:
     def __init__(self, text, threshold=0.1):
         phrases = self.split_document_to_phrases(text)
         assert len(phrases) < 400
-        print(phrases.shape)
         self.phrases = phrases
         self.dumping_factor = 0.85
         self.threshold = threshold
@@ -52,9 +51,7 @@ class GraphBasedSummary:
         return self.power_iteration(N, matrix, 100)
 
     def get_ranking(self, threshold):
-        print("calculating matrix")
         matrix = self.creer_matrice_adjance(self.phrases['phrase'])
-        print("calculating lex rank")
         return self.lex_rank(matrix, threshold)
 
 
@@ -124,11 +121,13 @@ class GraphBasedSummary:
         res = []
         res_len = 0
         i = 0
-        while (res_len + len(df["phrase"].iloc[i]) < chars and i < len(df)):
+        while (i < len(df) and res_len + len(df["phrase"].iloc[i]) < chars):
             res.append((df["phrase"].iloc[i], df["position"].iloc[i]))
             res_len += len(df["phrase"].iloc[i])
             i += 1
         res = np.array(res)
+        if len(res) == 0:
+            return np.array([]), np.array([])
         resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
         resume['position'] = pd.to_numeric(resume['position'])
         ordered_resume = resume.sort_values(by='position', ascending=True)

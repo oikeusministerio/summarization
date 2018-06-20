@@ -21,7 +21,7 @@ class DocumentParser:
         for i, paragraph in enumerate(self.document.paragraphs):
             style = paragraph.style.name
             if style not in self.body_text_styles:
-                titles.append(paragraph.text)
+                titles.append(paragraph.text.strip())
                 sections_starting.append(i)
         paragraphs = np.array([p.text for p in self.document.paragraphs])
         sections_starting.append(len(paragraphs))

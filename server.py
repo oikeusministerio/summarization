@@ -78,11 +78,9 @@ class SummaryAPI(MethodView):
         method = request.json["method"]
 
         summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
-
-        positions = positions.tolist()
         return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
 
-ALLOWED_EXTENSIONS = ['doc'] # let's add more extensions, like .txt and .docx, when they are implemented
+ALLOWED_EXTENSIONS = ['docx'] # let's add more extensions, like .txt, when they are implemented
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -99,28 +97,30 @@ class SummaryFromFileAPI(MethodView):
         ---
         tags:
           - summaries
+        consumes:
+         - multipart/form-data
         parameters:
-          - in: body
-            name: body
-            schema:
-              id: Text
-              required:
-                - content
-                - summary_length
-                - method
-              properties:
-                content:
-                  type: file
-                  description: file that contains text
-                summary_length:
-                  type: int
-                  description: maximum number of characters to use in summary
-                minimum_distance:
-                  type: float
-                  description: minimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
-                method:
-                  type: string
-                  description: what method is used to create summary
+          - in: formData
+            name: file
+            type: file
+            required: true
+            description: the file to upload
+          - in: path
+            name: method
+            type: string
+            required: true
+            description: what method is used to create summary
+          - in: path
+            name: summary_length
+            type: int
+            required: true
+            description: maximum number of characters to use in summary
+          - in: path
+            name: minimum_distance
+            type: float
+            required: true
+            description: wminimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
+
           201:
             description: Summary created
         """
@@ -134,17 +134,25 @@ class SummaryFromFileAPI(MethodView):
         if file.filename == '':
             return return_json(json.dumps({'success': False, 'error': 'No file selected : filename is empty.'}), 404)
 
+        method = request.args.get('method')
+        try:
+            summary_length = int(request.args.get('summary_length'))
+            minimum_distance = float(request.args.get('minimum_distance'))
+        except ValueError:
+            return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}), 404)
+
         if file and allowed_file(file.filename):
             parser = DocumentParser(file)
             parsed_document, titles = parser.parse()
             summaries = {}
             for title in titles:
-                summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), 100, threshold=0.1)
+                summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
                 summaries[title] = {'summary':summary,'positions':positions}
             summaries['success'] = True
+            summaries['titles'] = titles
             return return_json(json.dumps(summaries), 201)
         else:
-            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + ALLOWED_EXTENSIONS, 'positions':[12]}), 404)
+            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[12]}), 404)
 
 
 summary_view = SummaryAPI.as_view('summaries')

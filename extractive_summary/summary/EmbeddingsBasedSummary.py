@@ -93,6 +93,7 @@ class EmbeddingsBasedSummary:
         :param sentences: array of sentences
         :return: array of words
         """
+        assert len(sentences) > 0, "Provide at least one sentence."
         return np.hstack(np.array([np.array(s.split()) for s in sentences]))
 
     def modified_greedy_algrorithm(self, summary_size):
@@ -127,6 +128,9 @@ class EmbeddingsBasedSummary:
             if len(s) <= summary_size else self.max_distance
             for s in sentences_left])
         s_star = sentences_left[s_candidates.argmax()]
+
+        if len(candidate_summary) == 0: # summary_size smaller than any of sentences
+            return np.array([]),np.array([])
 
         # and now choose eiher the best sentence or combination, algorithm line 7
         if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
