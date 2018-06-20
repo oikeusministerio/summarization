@@ -18,11 +18,15 @@ cd extractive_summary
 
 when server running, post a text to summarize: 
 ```
-curl --header "Content-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":30, "minimum_distance":0.1}' http://localhost:5000/summarize
+curl --header "Content-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":30, "minimum_distance":0.1, "method":"embedding"}' http://localhost:5000/summarize
 ```
 
-or visit http:localhost:5000.
+or visit http:localhost:5000 with browser.
 
+To send text file for summarization, use
+```
+curl -v -F file=@testi.doc http://localhost:5000/summarize/file
+```
 
 #### Run tests
 ```

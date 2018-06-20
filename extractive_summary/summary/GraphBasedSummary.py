@@ -124,9 +124,9 @@ class GraphBasedSummary:
         res = []
         res_len = 0
         i = 0
-        while (res_len < chars and i < len(df)):
+        while (res_len + len(df["phrase"].iloc[i]) < chars and i < len(df)):
             res.append((df["phrase"].iloc[i], df["position"].iloc[i]))
-            res_len += len(df["phrase"].iloc[i]) + 2
+            res_len += len(df["phrase"].iloc[i])
             i += 1
         res = np.array(res)
         resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
@@ -134,7 +134,7 @@ class GraphBasedSummary:
         ordered_resume = resume.sort_values(by='position', ascending=True)
         return ordered_resume['phrase'].values, ordered_resume['position'].values
 
-    def summarize(self, summary_length=50):
+    def summarize(self, summary_length=1000):
         """
         :param threshold: minimum similarity value between two sentences
         :param summary_length: number of characters to use in summary

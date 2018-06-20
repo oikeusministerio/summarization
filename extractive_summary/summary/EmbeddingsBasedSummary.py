@@ -24,6 +24,9 @@ class EmbeddingsBasedSummary:
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
         self.sentences, self.words = self.split_document(text)
         self.r = 0.5 # scaling factor
+        # when searching argmax, indexes with this value are not selected
+        # becouse it is so big
+        self.max_distance = -10000000
         with open('extractive_summary/config.json', 'r') as f:
             config = json.load(f)
             self.redis_address = config["redis_address"]
@@ -63,7 +66,7 @@ class EmbeddingsBasedSummary:
                                               for w in candidate_summary if w.lower() in self.dictionary])
 
         if len(candidate_summary_indexes) == 0: # this shouldn't hopyfully happen, that we have sentence without any word in dictionary. But just in case
-            return -1000000 # let's not choose sentences that contains no known words
+            return self.max_distance # let's not choose sentences that contains no known words
 
         candidate_document_distances = self.distances[:, candidate_summary_indexes]
         # before selecting minimun distances, let's avoid selecting, that the nearest one is the point himself
@@ -92,7 +95,7 @@ class EmbeddingsBasedSummary:
         """
         return np.hstack(np.array([np.array(s.split()) for s in sentences]))
 
-    def modified_greedy_algrorithm(self, summary_size = 1000):
+    def modified_greedy_algrorithm(self, summary_size):
         """
 
         Implementation of Algorithm 1 in chapter 3
@@ -121,7 +124,8 @@ class EmbeddingsBasedSummary:
         sentences_left = self.sentences['sentences'].values
         s_candidates = np.array([
             self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) \
-            for s in sentences_left if len(s) <= summary_size])
+            if len(s) <= summary_size else self.max_distance
+            for s in sentences_left])
         s_star = sentences_left[s_candidates.argmax()]
 
         # and now choose eiher the best sentence or combination, algorithm line 7
@@ -130,8 +134,8 @@ class EmbeddingsBasedSummary:
         else:
             return self.get_positions(candidate_summary)
 
-    def summarize(self, summary_size = 1000):
-        return self.modified_greedy_algrorithm(summary_size=summary_size)
+    def summarize(self, summary_length = 1000):
+        return self.modified_greedy_algrorithm(summary_length)
 
     def redis_client(self):
         return redis.Redis(self.redis_address, port=self.redis_port)
