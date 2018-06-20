@@ -46,4 +46,16 @@ function showSummary(text, positions) {
 
 function setup() {
     document.getElementById("submit_button").addEventListener("click", send);
+
+    document.getElementById("copy_paste_input").style.display = "none";
+}
+
+function toggleTextInputField(e) {
+    if(e.value == "file_upload_input") {
+        document.getElementById("copy_paste_input").style.display = "none";
+        document.getElementById("file_upload_input").style.display = "block";
+    } else {
+        document.getElementById("copy_paste_input").style.display = "block";
+        document.getElementById("file_upload_input").style.display = "none";
+    }
 }
