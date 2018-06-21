@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="js/script.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <title>Title</title>
+</head>
+<body onload="setup()">
+    <div class="header"></div>
+    <div id="wrapper">
+        <div id="app_form">
+            <h1>Automaattiset tiivistelmät</h1>
+             <form>
+                 <p>
+                      Käytettävä tiivistysmenetelmä :
+                      <div>
+                          <input type="radio" name="method" value="graph" checked id="graph"> <label for="graph">Verkkoon perustuva (graph)</label>
+                          <input type="radio" name="method" value="embedding" id="embedding"> <label for="embedding"> Sanavektoreihin perustuva (word embeddings) </label><br>
+                      </div>
+                  </p><br>
+                 <p>
+                      Tiivistelmän pituus (merkeissä, välillä 50 ja 5000)
+                      <input type="number" name="quantity" min="50" max="5000" value="500" id="summary_length"/>
+                  </p><br>
+                 <h2>Tiivistettävä teksti:</h2><br>
+                 <div id="text_input">
+                     <div>
+                          <input type="radio" name="text_input_mode" value="file_upload_input" checked id="file_upload_input_button" onclick="toggleTextInputField(this)">
+                          <label for="file_upload_input_button">Teksti docx tiedostossa</label>
+                          <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
+                          <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
+                      </div>
+                     <div id="content_input_wrapper">
+                         <div id="file_upload_input">
+                             <p>Tiedoston teksti pilkotaa kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
+                            <input id="file" type="file" name="file" accept=".docx"><br>
+                         </div>
+                         <div id="copy_paste_input">
+                            <textarea id="content" >Liimaa tiivistettävä teksti tänne.</textarea><br>
+                         </div>
+                     </div>
+                 </div>
+                 <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
+            </form>
+            <div id="in_progress"></div>
+            <div id="output_div">
+
+            </div>
+            <div id="error_output">
+
+            </div>
+        </div>
+        <div class="footer"></div>
+        <hr></hr>
+        <p>Menetelmä graph : Erkan, Günes, and Dragomir R. Radev. "Lexrank: Graph-based lexical centrality as salience in text summarization." journal of artificial intelligence research 22 (2004): 457-479.</p>
+        <p>Menetelmä word embeddings : Kobayashi, Hayato, Masaki Noguchi, and Taichi Yatsuka. "Summarization based on embedding distributions." Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.</p>
+    </div>
+</body>
+</html>

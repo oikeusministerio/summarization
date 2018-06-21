@@ -6,16 +6,16 @@ from nltk import word_tokenize, sent_tokenize
 
 class GraphBasedSummary:
 
-    def __init__(self, text):
+    def __init__(self, text, threshold=0.1):
         phrases = self.split_document_to_phrases(text)
         assert len(phrases) < 400
-        print(phrases.shape)
         self.phrases = phrases
         self.dumping_factor = 0.85
+        self.threshold = threshold
 
     def split_document_to_phrases(self, text):
         phrases = sent_tokenize(text)
-        # add id to give order for phrases later
+        # add id to give order for sentences later
         return pd.DataFrame({'position': np.arange(len(phrases)), 'phrase': np.array(phrases)})
 
     def power_iteration(self, N, M, num_simulations):
@@ -51,9 +51,7 @@ class GraphBasedSummary:
         return self.power_iteration(N, matrix, 100)
 
     def get_ranking(self, threshold):
-        print("calculating matrix")
         matrix = self.creer_matrice_adjance(self.phrases['phrase'])
-        print("calculating lex rank")
         return self.lex_rank(matrix, threshold)
 
 
@@ -123,26 +121,27 @@ class GraphBasedSummary:
         res = []
         res_len = 0
         i = 0
-        while (res_len < chars and i < len(df)):
+        while (i < len(df) and res_len + len(df["phrase"].iloc[i]) < chars):
             res.append((df["phrase"].iloc[i], df["position"].iloc[i]))
-            res_len += len(df["phrase"].iloc[i]) + 2
+            res_len += len(df["phrase"].iloc[i])
             i += 1
         res = np.array(res)
+        if len(res) == 0:
+            return np.array([]), np.array([])
         resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
         resume['position'] = pd.to_numeric(resume['position'])
         ordered_resume = resume.sort_values(by='position', ascending=True)
-        return " ".join(ordered_resume['phrase'].values), ordered_resume['position'].values
+        return ordered_resume['phrase'].values, ordered_resume['position'].values
 
-    def summarize(self, threshold, summary_length=50):
+    def summarize(self, summary_length=1000):
         """
         :param threshold: minimum similarity value between two sentences
         :param summary_length: number of characters to use in summary
-        (ATTENTION! As dealing with phrases of different size, the summary procuded will not propably be exactly that length.)
+        (ATTENTION! As dealing with sentences of different size, the summary procuded will not propably be exactly that length.)
         :return: summary
         """
-        ranking = self.get_ranking(threshold)
+        ranking = self.get_ranking(self.threshold)
         df = self.phrases
         df['ranking'] = ranking
         ordered = df.sort_values(by='ranking', ascending=False)
-        print(ordered)
         return self.take_paragraphs_until(ordered, summary_length)
