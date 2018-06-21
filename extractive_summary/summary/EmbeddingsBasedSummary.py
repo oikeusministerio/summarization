@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from nltk import sent_tokenize, word_tokenize
 import json
+from .result_visualization import visualize_embedding_results
 
 class EmbeddingsBasedSummary:
     """
@@ -31,6 +32,7 @@ class EmbeddingsBasedSummary:
             config = json.load(f)
             self.redis_address = config["redis_address"]
             self.redis_port = config["redis_port"]
+            self.embeddings_file = config["embeddings_file"]
             self.get_redis_client = redis_client_constructor if redis_client_constructor != None else self.redis_client
             self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
 
@@ -39,6 +41,7 @@ class EmbeddingsBasedSummary:
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
+        words = np.array([w for w in words if len(w) > 1])
         sentences = [s for s in sentences if len(s) >= minimum_sentence_length]
 
         sentences_without_newlines = []
@@ -138,15 +141,18 @@ class EmbeddingsBasedSummary:
         else:
             return self.get_positions(candidate_summary)
 
-    def summarize(self, summary_length = 1000):
-        return self.modified_greedy_algrorithm(summary_length)
+    def summarize(self, summary_length = 1000, plot_result=True):
+        selected_sentences, positions = self.modified_greedy_algrorithm(summary_length)
+        if plot_result:
+            visualize_embedding_results(self.words, selected_sentences, self.dictionary, self.embeddings_file)
+        return selected_sentences, positions
 
     def redis_client(self):
         return redis.Redis(self.redis_address, port=self.redis_port)
 
     def fetch_distances(self, words):
         """
-        Connects to redis database, that is supposed to contain distances between all words, and fetches only words needed.
+        Connects to redis database, that contains distances between all words, and fetches only words needed.
         Vocabulary of each individuel text is supposed to contain so few words that they fit to memory.
         :param words:
         :return: distances and transformations for indexes

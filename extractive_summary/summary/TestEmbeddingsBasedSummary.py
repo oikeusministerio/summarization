@@ -25,11 +25,6 @@ def mock_redis_client(a,b):
 
 class TestEmbeddingsBasedSummary(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super(TestEmbeddingsBasedSummary, self).__init__(*args, **kwargs)
-        self.test_redis = 1 # by default it is 0, so let's reserve 0 for production use ans 1 for testing
-        # https://github.com/andymccurdy/redis-py
-
     def test_nearest_neighbor_objective_function(self):
         pass # TEST THIS ONE TOO
         candidate_summary = ["eka", "kolmas"]
