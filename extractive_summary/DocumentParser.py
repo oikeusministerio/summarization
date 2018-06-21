@@ -31,6 +31,7 @@ class DocumentParser:
 
         if len(titles) == 0:
             parsed_document['Sisalto'] =  list(paragraphs)
+            titles.append('Sisalto')
 
         return parsed_document, titles
 

@@ -31,11 +31,14 @@
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
                           <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
                       </div>
-                     <div id="file_upload_input">
-                        <input type="file"><br>
-                     </div>
-                     <div id="copy_paste_input">
-                        <textarea id="content" rows="4" cols="50" >Liimaa tiivistettävä teksti tänne.</textarea><br>
+                     <div id="content_input_wrapper">
+                         <div id="file_upload_input">
+                             <p>Tiedoston teksti pilkotaa kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
+                            <input id="file" type="file" name="file" accept=".docx"><br>
+                         </div>
+                         <div id="copy_paste_input">
+                            <textarea id="content" >Liimaa tiivistettävä teksti tänne.</textarea><br>
+                         </div>
                      </div>
                  </div>
                  <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
