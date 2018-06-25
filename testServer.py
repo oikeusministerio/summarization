@@ -4,6 +4,7 @@ from flask import Flask
 from flask_testing import TestCase
 import json
 from io import BytesIO, StringIO
+from urllib import parse
 
 from server import get_app
 
@@ -11,7 +12,7 @@ def post_text(client, text,summary_length,method):
     response = client.post('/summarize',
                             data=json.dumps(
                                 {"content": text, "summary_length": summary_length, "minimum_distance": 0.1,
-                                 "method": method}),
+                                 "method": method, 'return_justification': True}),
                             content_type='application/json')
     return json.loads(response.data.decode('utf8'))
 
@@ -80,6 +81,12 @@ class TestServer(TestCase):
                         if len(summary) > 0:
                             first_sentence = summary.split('.')[0]
                             self.assertTrue(first_sentence in summary)
+
+    def test_visualisation(self):
+        response = self.client.get('/visualize/embeddings?words=' + parse.quote(str([1,2,3,4]), safe='~()*!.\'') + \
+                                   '&neighbors=' + parse.quote(str([1,2,3,4]), safe='~() *!.\''))
+
+        self.assertIsNotNone(response.data)
 
 if __name__ == '__main__':
     unittest.main()

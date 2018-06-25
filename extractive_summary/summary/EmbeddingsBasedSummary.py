@@ -109,7 +109,7 @@ class EmbeddingsBasedSummary:
         :return: array of words
         """
         assert len(sentences) > 0, "Provide at least one sentence."
-        return np.hstack(np.array([np.array(s.split()) for s in sentences]))
+        return np.hstack([np.array(word_tokenize(s, language="finnish")) for s in sentences])
 
     def modified_greedy_algrorithm(self, summary_size):
         """
@@ -155,16 +155,19 @@ class EmbeddingsBasedSummary:
 
         sentences, positions = self.get_positions(final_summary)
         summary_indexes = self.get_candidate_summary_indexes(self.split_sentences(final_summary))
+        if len(summary_indexes) == 0:
+            return sentences,positions,np.array([])
         _, nearest_neighbors = self.nearest_neighbors(self.distances, summary_indexes)
         nearest_words = np.array([self.reversed_dictionary[self.reversed_distance_index_mapping[i]] \
                                   for i in nearest_neighbors])
+
         return sentences, positions, nearest_words
 
-    def summarize(self, summary_length = 1000, plot_result=True):
+    def summarize(self, summary_length = 1000,return_words=False):
         selected_sentences, positions, nearest_words = self.modified_greedy_algrorithm(summary_length)
-        if plot_result:
-            print(nearest_words)
-            #visualize_embedding_results(self.words, selected_sentences, self.dictionary, self.embeddings_file)
+        if return_words:
+            return selected_sentences, positions, [self.dictionary[w] for w in self.words], \
+                   [self.dictionary[nw] for nw in nearest_words]
         return selected_sentences, positions
 
     def redis_client(self):

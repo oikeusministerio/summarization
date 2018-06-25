@@ -1,11 +1,15 @@
 
-from flask import Flask, jsonify,request, send_from_directory, Response
+from flask import Flask, jsonify,request, send_from_directory, send_file
 import json
 from flask.views import MethodView
-from werkzeug.utils import secure_filename
 from flask_swagger import swagger
 import logging
 import os,sys
+from io import BytesIO
+import urllib
+import ast
+from extractive_summary.summary.result_visualization import visualize_embedding_results
+import numpy as np
 
 # prepare nltk
 import nltk
@@ -61,12 +65,17 @@ class SummaryAPI(MethodView):
                 method:
                   type: string
                   description: what method is used to create summary
+                return_justification:
+                  type: boolean
+                  description: whether should return ranking for graph based method or visualization for embedding based one.
           201:
             description: Summary created
         """
-        if 'content' not in request.json or 'summary_length' not in request.json or 'minimum_distance' not in request.json or 'method' not in request.json:
-            # body should be validated by swagger, but this works also
-            return return_json(json.dumps({'success':False, 'error':'Please provide content, summary length, minimum_distance and method.'}), 404)
+        params = ['content','summary_length','minimum_distance','method','return_justification']
+        for param in params:
+            if param not in request.json:
+                # body should be validated by swagger, but this works also
+                return return_json(json.dumps({'success':False, 'error':'Please provide : ' + str(params)}), 404)
 
         try:
             length = int(request.json['summary_length'])
@@ -76,6 +85,15 @@ class SummaryAPI(MethodView):
 
         text = request.json['content']
         method = request.json["method"]
+        return_justification = request.json['return_justification']
+
+        if return_justification:
+            if method == 'embedding':
+                summary, positions,words, neighbors = self.summarizer.embedding_summary_with_nearest_neighbors(text, length)
+                return return_json(json.dumps(
+                    {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
+                ), 201)
+
 
         summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
         return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
@@ -154,11 +172,50 @@ class SummaryFromFileAPI(MethodView):
         else:
             return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[12]}), 404)
 
+class VisualisationAPI(MethodView):
+
+    def __init__(self):
+        with open('extractive_summary/config.json', 'r') as f:
+            config = json.load(f)
+            self.embeddings = np.load(config['embeddings_file'])
+
+    def get(self):
+        """
+        Create a summary for given text-file.
+        ---
+        tags:
+          - summaries
+        parameters:
+          - in: path
+            name: words
+            type: list or array
+            required: true
+            description: words of original document
+          - in: path
+            name: neighbors
+            type: list or array
+            required: true
+            description: nearest neighbors of each word in words array
+          201:
+            description: Summary created
+        """
+        # check if the post request has the file part
+        words = request.args.get('words')
+        words = ast.literal_eval(words)
+        neighbors = request.args.get('neighbors')
+        neighbors = ast.literal_eval(neighbors)
+
+        bytes_io = BytesIO()
+        visualize_embedding_results(words, neighbors, None, self.embeddings, bytes_io)
+        bytes_io.seek(0)
+        return send_file(bytes_io, mimetype='image/png')
 
 summary_view = SummaryAPI.as_view('summaries')
 file_summary_view = SummaryFromFileAPI.as_view("summaries from file")
+visualisation_view = VisualisationAPI.as_view("visualisation")
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])
 app.add_url_rule('/summarize/file', view_func=file_summary_view, methods=["POST"])
+app.add_url_rule('/visualize/embeddings', view_func=visualisation_view, methods=["GET"])
 
 @app.route('/js/<path:path>')
 def send_js(path):
