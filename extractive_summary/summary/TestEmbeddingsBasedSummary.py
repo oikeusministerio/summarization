@@ -5,6 +5,8 @@ import redis
 import unittest
 from unittest.mock import patch
 from .EmbeddingsBasedSummary import EmbeddingsBasedSummary
+from tools.tools import load_data
+import os.path
 
 class RedisMock:
 
@@ -26,16 +28,60 @@ def mock_redis_client(a,b):
 class TestEmbeddingsBasedSummary(unittest.TestCase):
 
     def test_nearest_neighbor_objective_function(self):
-        pass # TEST THIS ONE TOO
         candidate_summary = ["eka", "kolmas"]
+        dictionary = {"eka": 0, "toka": 1, "kolmas": 2, "neljäs":3}
+        distances = np.array([[0,1,1,1],\
+                              [1,0,1,1],\
+                              [1,1,0,1],\
+                              [1,1,1,0]], dtype=float)
+        distance_index_mapping = {i:i for i in [0,1,2,3]}
         text = "eka toka. kolmas neljäs."
 
+        summary = EmbeddingsBasedSummary(text, dictionary=dictionary)
+        summary.distances = distances
+        summary.distance_index_mapping = distance_index_mapping
+        sim = summary.nearest_neighbor_objective_function(candidate_summary)
+        self.assertEqual(sim, -4)
 
-        #summary = EmbeddingsBasedSummary(text)
-        #sim = summary.nearest_neighbor_objective_function(candidate_summary)
-        #diff = abs(sim)
-        #print(diff)
-        #self.assertLess(diff, 0.001)
+        distances *= 2
+        distances[0,2] = 1.5
+        sim = summary.nearest_neighbor_objective_function(candidate_summary)
+        self.assertEqual(sim, -7.5)
+
+        candidate_summary = ["eka", "kolmas", "neljäs"]
+        distances[:, 3] = 0.5
+        sim = summary.nearest_neighbor_objective_function(candidate_summary)
+        self.assertEqual(sim, -3.5)
+
+    def test_nearest_neighbors(self):
+        distances = np.array([[0, 5, 3, 4], \
+                              [1, 0, 2, 1.5], \
+                              [2, 1.1, 0, 1], \
+                              [3, 1, 0.5, 0]], dtype=float)
+        text = "tätä ei testata."
+        summary = EmbeddingsBasedSummary(text, dictionary={})
+        dist_result, nearest = summary.nearest_neighbors(distances, [0])
+        result = distances[:, 0]
+        result[0] = 1000
+        self.assertTrue((dist_result == result).all())
+        self.assertTrue((nearest == 0).all())
+
+        dist_result, nearest = summary.nearest_neighbors(distances, [0,1,2,3])
+        self.assertTrue((dist_result == [3,1,1,0.5]).all())
+        self.assertTrue((nearest == [2, 0, 3, 2]).all())
+
+    def test_modified_greedy_algo(self):
+        fname = "judgements/data"
+        data = load_data(fname, N=1)
+        self.assertIsNotNone(data)
+        text = data.iloc[0]['text']
+        summarizer = EmbeddingsBasedSummary(text, dictionary_file="embeddings/data/dictionary.npy")
+        sentences, _, nearest_words = summarizer.modified_greedy_algrorithm(500)
+        summary = " ".join(sentences).lower()
+        print(summary)
+        for word in nearest_words:
+            print(word)
+            self.assertTrue(word in summary)
 
     def test_fetch_distances(self):
         text = "eka toka. kolmas eka."
