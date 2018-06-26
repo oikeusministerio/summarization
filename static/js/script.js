@@ -119,9 +119,11 @@ function toggleTextInputField(e) {
     if(e.value == "file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("file_upload_input").style.display = "block";
+        document.getElementById("return_justification").style.display = "none";
     } else {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("file_upload_input").style.display = "none";
+        document.getElementById("return_justification").style.display = "block";
     }
 }
 

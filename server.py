@@ -142,9 +142,7 @@ class SummaryFromFileAPI(MethodView):
           201:
             description: Summary created
         """
-        # check if the post request has the file part
-        #import pdb
-        #pdb.set_trace()
+
         if 'file' not in request.files:
             return return_json(json.dumps({'success':False, 'error':'There are no file in request.'}), 404)
 
@@ -152,7 +150,14 @@ class SummaryFromFileAPI(MethodView):
         if file.filename == '':
             return return_json(json.dumps({'success': False, 'error': 'No file selected : filename is empty.'}), 404)
 
+        params = ['summary_length', 'minimum_distance', 'method']
+        for param in params:
+            if param not in request.json:
+                # body should be validated by swagger, but this works also
+                return return_json(json.dumps({'success': False, 'error': 'Please provide : ' + str(params)}), 404)
+
         method = request.args.get('method')
+
         try:
             summary_length = int(request.args.get('summary_length'))
             minimum_distance = float(request.args.get('minimum_distance'))
@@ -172,7 +177,7 @@ class SummaryFromFileAPI(MethodView):
         else:
             return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[12]}), 404)
 
-class VisualisationAPI(MethodView):
+class VisualisationEmbeddingAPI(MethodView):
 
     def __init__(self):
         with open('extractive_summary/config.json', 'r') as f:
@@ -214,7 +219,7 @@ class VisualisationAPI(MethodView):
 
 summary_view = SummaryAPI.as_view('summaries')
 file_summary_view = SummaryFromFileAPI.as_view("summaries from file")
-visualisation_view = VisualisationAPI.as_view("visualisation")
+visualisation_view = VisualisationEmbeddingAPI.as_view("visualisation")
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])
 app.add_url_rule('/summarize/file', view_func=file_summary_view, methods=["POST"])
 app.add_url_rule('/visualize/embeddings', view_func=visualisation_view, methods=["GET"])
