@@ -13,7 +13,8 @@ class GraphBasedSummary:
         self.threshold = threshold
 
     def split_document_to_sentences(self, text):
-        sentences = sent_tokenize(text)
+        sentences = sent_tokenize(text, language="finnish")
+        sentences = [s for s in sentences if len(s) > 3]
         # add id to give order for sentences later
         return pd.DataFrame({'position': np.arange(len(sentences)), 'sentence': np.array(sentences)})
 
