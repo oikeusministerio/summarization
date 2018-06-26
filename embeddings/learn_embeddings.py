@@ -9,7 +9,7 @@ import collections
 import random
 import sys
 sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
-from summarization.tools import load_data, word_is_valid
+from summarization.tools.tools import load_data, word_is_valid
 
 if len(sys.argv) < 3:
     print("Please give the path to texts and destination for the embeddings.")
@@ -23,10 +23,10 @@ data_dir =  sys.argv[2] # "data/"
 # learning params
 batch_size = 128
 embedding_size = 128  # Dimension of the embedding vector.
-skip_window = 1  # How many words to consider left and right.
-num_skips = 2  # How many times to reuse an input to generate a label.
+skip_window = 2  # How many words to consider left and right.
+num_skips = 4  # How many times to reuse an input to generate a label.
 num_sampled = 64 # Number of negative examples to sample.
-num_steps = 50000
+num_steps = 100001
 
 print("read data from : ", fname)
 texts = load_data(fname)

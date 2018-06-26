@@ -8,22 +8,22 @@ import matplotlib.pyplot as plt
 from nltk import word_tokenize
 import sys
 import os
-sys.path.append(os.path.abspath('../tools'))
-from tools import load_data
+sys.path.append(os.path.abspath('../'))
+from summarization.tools.tools import load_data
+
+
+
+
+
+texts = load_data('judgements/data', N=-1)
 
 
 # In[ ]:
 
 
-texts = load_data('../judgements/data', N=-1)
+words = texts['text'].apply(lambda text: [w for w in word_tokenize(text.lower(), language="finnish") if len(w) >= 2])
 
-
-# In[ ]:
-
-
-words = texts['text'].apply(lambda text: word_tokenize(text.lower(), language="finnish"))
-
-
+print('Words tokenized')
 # In[ ]:
 
 
@@ -57,10 +57,10 @@ commons
 
 
 plt.plot(range(len(totals)), totals)
-plt.title("Uniikkien sanojen määrä \n KHO:n päätökset 1990-2017")
-plt.xlabel("KHO:n päätöksien määrä")
+plt.title("Uniikkien sanojen määrä \n")
+plt.xlabel("Päätöksien määrä")
 plt.ylabel("Sanojen määrä")
-plt.savefig("visualisation/vocabulary_size_KHO_1990-2017.png")
+plt.savefig("visualisation/vocabulary_size_6423_judgements.png")
 
 
 # In[ ]:
