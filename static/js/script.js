@@ -18,8 +18,12 @@ function sendText(method,summary_length,returnJustification) {
       document.getElementById("submit_button").disabled = false;
       var data = JSON.parse(this.responseText);
       if(data.success) {
-        showSummary(data.summary, data.positions);
-        if(returnJustification == "True") {
+        if (method == 'graph' && returnJustification == "True") {
+            showSummary(data.summary, data.positions, true, data.ranking);
+        } else {
+            showSummary(data.summary, data.positions, false);
+        }
+        if(method == 'embedding' && returnJustification == "True") {
             fetchVisualisation(data.words,data.neighbors)
         }
       } else {
@@ -90,9 +94,13 @@ function showError(text) {
 }
 
 // modify this to more pretty
-function showSummary(text, positions) {
+function showSummary(text, positions, hasRanking, ranking) {
     document.getElementById("error_output").innerHTML = ""
-    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> TIIVISTELMÄ: \n" + text
+    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> "
+    if (hasRanking) {
+        output += "LEX-RANK ranking " + ranking + "<br> <br>"
+    }
+    output += "TIIVISTELMÄ: \n" + text
     document.getElementById("output_div").innerHTML = output
 }
 

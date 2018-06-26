@@ -93,6 +93,11 @@ class SummaryAPI(MethodView):
                 return return_json(json.dumps(
                     {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
                 ), 201)
+            else:
+                summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
+                return return_json(json.dumps(
+                    {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
+                ), 201)
 
 
         summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
@@ -152,7 +157,7 @@ class SummaryFromFileAPI(MethodView):
 
         params = ['summary_length', 'minimum_distance', 'method']
         for param in params:
-            if param not in request.json:
+            if param not in request.args:
                 # body should be validated by swagger, but this works also
                 return return_json(json.dumps({'success': False, 'error': 'Please provide : ' + str(params)}), 404)
 

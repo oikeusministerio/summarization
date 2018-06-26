@@ -88,5 +88,15 @@ class TestServer(TestCase):
 
         self.assertIsNotNone(response.data)
 
+    def test_graph_summary_that_ranking_is_returned(self):
+        summary_length = 200
+        with open("judgements/data/1997_170.txt", 'r') as f:
+            text = f.read()
+        response = post_text(self.client,text, summary_length, "graph")
+        self.assertTrue('ranking' in response)
+        self.assertTrue('positions' in response)
+        self.assertTrue('summary' in response)
+        self.assertEqual(len(response['ranking']), len(response['positions']))
+
 if __name__ == '__main__':
     unittest.main()

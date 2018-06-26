@@ -17,3 +17,9 @@ class Summarizer:
         summarizer = EmbeddingsBasedSummary(text,  dictionary_file=self.dictionary_file)
         sentences, positions, words, neighbors = summarizer.summarize(summary_length=length, return_words=True)
         return " ".join(sentences), [int(p) for p in positions], words, neighbors
+
+    def graph_summary_with_ranking(self, text, length, threshold):
+        summarizer = GraphBasedSummary(text,  threshold=threshold)
+        sentences, positions, ranking = summarizer.summarize(summary_length=length, return_ranking=True)
+        ranking = ranking.round(3)
+        return " ".join(sentences), [int(p) for p in positions], ranking.values.tolist()
