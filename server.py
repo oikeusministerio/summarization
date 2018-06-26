@@ -178,6 +178,8 @@ class VisualisationAPI(MethodView):
         with open('extractive_summary/config.json', 'r') as f:
             config = json.load(f)
             self.embeddings = np.load(config['embeddings_file'])
+            dictionary = np.load(config['dictionary_file']).item()
+            self.reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
 
     def get(self):
         """
@@ -206,7 +208,7 @@ class VisualisationAPI(MethodView):
         neighbors = ast.literal_eval(neighbors)
 
         bytes_io = BytesIO()
-        visualize_embedding_results(words, neighbors, None, self.embeddings, bytes_io)
+        visualize_embedding_results(words, neighbors, self.reverse_dictionary, self.embeddings, bytes_io)
         bytes_io.seek(0)
         return send_file(bytes_io, mimetype='image/png')
 

@@ -65,6 +65,7 @@ function sendFile(method,summary_length) {
 
 function send(e) {
     e.preventDefault();
+    clearCanvas();
     document.getElementById("submit_button").disabled = true;
     document.getElementById("output_div").innerHTML = ""
 
@@ -132,8 +133,12 @@ function fetchVisualisation(words, neighbors) {
         ctx.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
                    0, 0, canvas.width, canvas.height);
     };
-    //debugger;
     img.src = "http://localhost:5000/visualize/embeddings?words=" +
                 encodeURIComponent(words) + "&neighbors=" + encodeURIComponent(neighbors);
-    console.log(img.src)
+}
+
+function clearCanvas() {
+    var canvas = document.getElementById('visualisation_canvas');
+    var context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
