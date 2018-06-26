@@ -7,16 +7,16 @@ from nltk import word_tokenize, sent_tokenize
 class GraphBasedSummary:
 
     def __init__(self, text, threshold=0.1):
-        phrases = self.split_document_to_phrases(text)
-        assert len(phrases) < 400
-        self.phrases = phrases
+        self.sentences = self.split_document_to_sentences(text)
+        assert len(self.sentences) < 400
         self.dumping_factor = 0.85
         self.threshold = threshold
 
-    def split_document_to_phrases(self, text):
-        phrases = sent_tokenize(text)
+    def split_document_to_sentences(self, text):
+        sentences = sent_tokenize(text, language="finnish")
+        sentences = [s for s in sentences if len(s) > 3]
         # add id to give order for sentences later
-        return pd.DataFrame({'position': np.arange(len(phrases)), 'phrase': np.array(phrases)})
+        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentence': np.array(sentences)})
 
     def power_iteration(self, N, M, num_simulations):
         p_last = 1 / N * np.ones(N)
@@ -51,7 +51,7 @@ class GraphBasedSummary:
         return self.power_iteration(N, matrix, 100)
 
     def get_ranking(self, threshold):
-        matrix = self.creer_matrice_adjance(self.phrases['phrase'])
+        matrix = self.creer_matrice_adjance(self.sentences['sentence'])
         return self.lex_rank(matrix, threshold)
 
 
@@ -104,16 +104,16 @@ class GraphBasedSummary:
         w2 = np.array(word_tokenize(s2.lower()))
         return self.sentence_cosine_similarity(w1, w2)
 
-    def creer_matrice_adjance(self, phrases):
-        N = len(phrases)
+    def creer_matrice_adjance(self, sentences):
+        N = len(sentences)
         matrice = np.zeros((N, N))
         for i in range(N):
             for j in range(N):
                 if i == j:
                     matrice[i][j] = 1
                     continue
-                p1 = phrases[i]
-                p2 = phrases[j]
+                p1 = sentences[i]
+                p2 = sentences[j]
                 matrice[i][j] = self.similarity(p1, p2)
         return matrice
 
@@ -121,19 +121,19 @@ class GraphBasedSummary:
         res = []
         res_len = 0
         i = 0
-        while (i < len(df) and res_len + len(df["phrase"].iloc[i]) < chars):
-            res.append((df["phrase"].iloc[i], df["position"].iloc[i]))
-            res_len += len(df["phrase"].iloc[i])
+        while (i < len(df) and res_len + len(df["sentence"].iloc[i]) < chars):
+            res.append((df["sentence"].iloc[i], df["position"].iloc[i]))
+            res_len += len(df["sentence"].iloc[i])
             i += 1
         res = np.array(res)
         if len(res) == 0:
-            return np.array([]), np.array([])
-        resume = pd.DataFrame({'phrase': res[:, 0], 'position': res[:, 1]})
+            return np.array([]), np.array([]), 0
+        resume = pd.DataFrame({'sentence': res[:, 0], 'position': res[:, 1]})
         resume['position'] = pd.to_numeric(resume['position'])
         ordered_resume = resume.sort_values(by='position', ascending=True)
-        return ordered_resume['phrase'].values, ordered_resume['position'].values
+        return ordered_resume['sentence'].values, ordered_resume['position'].values, i
 
-    def summarize(self, summary_length=1000):
+    def summarize(self, summary_length=1000, return_ranking=False):
         """
         :param threshold: minimum similarity value between two sentences
         :param summary_length: number of characters to use in summary
@@ -141,7 +141,10 @@ class GraphBasedSummary:
         :return: summary
         """
         ranking = self.get_ranking(self.threshold)
-        df = self.phrases
+        df = self.sentences
         df['ranking'] = ranking
         ordered = df.sort_values(by='ranking', ascending=False)
-        return self.take_paragraphs_until(ordered, summary_length)
+        sentences, positions, i = self.take_paragraphs_until(ordered, summary_length)
+        if return_ranking:
+            return sentences, positions, ordered['ranking'][:i]
+        return sentences, positions

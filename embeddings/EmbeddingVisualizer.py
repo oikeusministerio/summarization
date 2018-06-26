@@ -23,10 +23,10 @@ def plot_with_labels(low_dim_embs, labels, filename = None):
     else:
         plt.savefig(filename)
 
-class EmbeddingsVisualizer:
+class EmbeddingVisualizer:
 
-    def __init__(self, embed_file = "data/embeddings.npy", \
-                 dico_file="data/dictionary.npy"):
+    def __init__(self, embed_file = "embeddings/data/embeddings.npy", \
+                 dico_file="embeddings/data/dictionary.npy"):
         self.embeddings = np.load(embed_file)
         self.dictionary = np.load(dico_file).item()
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))

@@ -1,6 +1,6 @@
 {
   "redis_address": "127.0.0.1",
   "redis_port": "6379",
-  "dictionary_file": "embeddings/data/dictionary.npy"
-
+  "dictionary_file": "embeddings/data/dictionary.npy",
+  "embeddings_file": "embeddings/data/embeddings.npy"
 }

@@ -31,7 +31,7 @@ class TestDocumentParser(unittest.TestCase):
             parser = DocumentParser(f)
         f.close()
         parsed2, titles2 = parser.parse()
-        self.assertEqual(len(titles2), 0)
+        self.assertEqual(len(titles2), 1)
         self.assertTrue("Sisalto" in parsed2)
 
 if __name__ == '__main__':

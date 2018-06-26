@@ -1,7 +1,7 @@
 
 var server_base_path = 'http://localhost:5000'
 
-function sendText(method,summary_length) {
+function sendText(method,summary_length,returnJustification) {
     var content = document.getElementById("content").value
     var xhr = new XMLHttpRequest();
     xhr.open("POST", server_base_path + "/summarize", true);
@@ -10,14 +10,22 @@ function sendText(method,summary_length) {
         content: content,
         summary_length: summary_length,
         minimum_distance: 0.1,
-        method: method
+        method: method,
+        return_justification:returnJustification
     }));
     xhr.onload = function() {
       document.getElementById("in_progress").innerHTML = ""
       document.getElementById("submit_button").disabled = false;
       var data = JSON.parse(this.responseText);
       if(data.success) {
-        showSummary(data.summary, data.positions);
+        if (method == 'graph' && returnJustification == "True") {
+            showSummary(data.summary, data.positions, true, data.ranking);
+        } else {
+            showSummary(data.summary, data.positions, false);
+        }
+        if(method == 'embedding' && returnJustification == "True") {
+            fetchVisualisation(data.words,data.neighbors)
+        }
       } else {
         showError(data.error)
       }
@@ -61,6 +69,7 @@ function sendFile(method,summary_length) {
 
 function send(e) {
     e.preventDefault();
+    clearCanvas();
     document.getElementById("submit_button").disabled = true;
     document.getElementById("output_div").innerHTML = ""
 
@@ -68,11 +77,13 @@ function send(e) {
     document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
     var method = document.querySelector('input[name="method"]:checked').value;
 
+    var returnJustification = document.querySelector('input[name="return_justification"]:checked').value;
+
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "file_upload_input") {
-        sendFile(method,summary_length)
+        sendFile(method,summary_length,returnJustification)
     } else {
-        sendText(method,summary_length)
+        sendText(method,summary_length,returnJustification)
     }
 }
 
@@ -83,9 +94,13 @@ function showError(text) {
 }
 
 // modify this to more pretty
-function showSummary(text, positions) {
+function showSummary(text, positions, hasRanking, ranking) {
     document.getElementById("error_output").innerHTML = ""
-    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> TIIVISTELMÄ: \n" + text
+    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> "
+    if (hasRanking) {
+        output += "LEX-RANK ranking " + ranking + "<br> <br>"
+    }
+    output += "TIIVISTELMÄ: \n" + text
     document.getElementById("output_div").innerHTML = output
 }
 
@@ -112,8 +127,28 @@ function toggleTextInputField(e) {
     if(e.value == "file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("file_upload_input").style.display = "block";
+        document.getElementById("return_justification").style.display = "none";
     } else {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("file_upload_input").style.display = "none";
+        document.getElementById("return_justification").style.display = "block";
     }
+}
+
+function fetchVisualisation(words, neighbors) {
+    var img = new Image();
+    img.onload = function () {
+        var canvas = document.getElementById('visualisation_canvas');
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, img.width,    img.height,     // source rectangle
+                   0, 0, canvas.width, canvas.height);
+    };
+    img.src = "http://localhost:5000/visualize/embeddings?words=" +
+                encodeURIComponent(words) + "&neighbors=" + encodeURIComponent(neighbors);
+}
+
+function clearCanvas() {
+    var canvas = document.getElementById('visualisation_canvas');
+    var context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }

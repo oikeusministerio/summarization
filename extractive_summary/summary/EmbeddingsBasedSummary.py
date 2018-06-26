@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from nltk import sent_tokenize, word_tokenize
 import json
+from .result_visualization import visualize_embedding_results
 
 class EmbeddingsBasedSummary:
     """
@@ -23,7 +24,7 @@ class EmbeddingsBasedSummary:
             self.dictionary = np.load(dictionary_file).item()
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
         self.sentences, self.words = self.split_document(text)
-        self.r = 0.5 # scaling factor
+        self.r = 0.5  # scaling factor
         # when searching argmax, indexes with this value are not selected
         # becouse it is so big
         self.max_distance = -10000000
@@ -31,14 +32,20 @@ class EmbeddingsBasedSummary:
             config = json.load(f)
             self.redis_address = config["redis_address"]
             self.redis_port = config["redis_port"]
+            self.embeddings_file = config["embeddings_file"]
             self.get_redis_client = redis_client_constructor if redis_client_constructor != None else self.redis_client
             self.distances, self.distance_index_mapping = self.fetch_distances(self.words)
+            self.reversed_distance_index_mapping = dict(zip(self.distance_index_mapping.values(), \
+                                                            self.distance_index_mapping.keys()))
+
+
 
     def split_document(self, text, minimum_sentence_length=5):
         sentences = sent_tokenize(text, language="finnish")
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
+        words = np.array([w for w in words if len(w) > 1])
         sentences = [s for s in sentences if len(s) >= minimum_sentence_length]
 
         sentences_without_newlines = []
@@ -55,6 +62,21 @@ class EmbeddingsBasedSummary:
         sentences = np.array(sentences_without_newlines)
         return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': sentences}), words
 
+    def nearest_neighbors(self, distances, candidate_summary_indexes):
+        index_mapping = {i:candidate_summary_indexes[i] for i in range(len(candidate_summary_indexes))}
+        candidate_document_distances = distances[:, candidate_summary_indexes]
+        # before selecting minimun distances, let's avoid selecting, that the nearest one is the point himself
+        cand_sums = candidate_document_distances[candidate_summary_indexes]
+        np.fill_diagonal(cand_sums, 1000)  # let's put big value so that diagonal will not be chosen
+        candidate_document_distances[candidate_summary_indexes] = cand_sums
+        nearests = candidate_document_distances.argmin(axis=1)
+        distances = candidate_document_distances.min(axis=1)
+        return distances,np.array([index_mapping[i] for i in nearests])
+
+    def get_candidate_summary_indexes(self, candidate_summary):
+        return np.array([self.distance_index_mapping[self.dictionary[w.lower()]] \
+                         for w in candidate_summary if w.lower() in self.dictionary])
+
     def nearest_neighbor_objective_function(self, candidate_summary):
         """
         Counts the distance between candidate_summary and document (words of original document).
@@ -62,19 +84,12 @@ class EmbeddingsBasedSummary:
         :param candidate_summary: list of words => current summary in iterative optimisation process
         :return: negative distance between candidate and sentences
         """
-        candidate_summary_indexes = np.array([self.distance_index_mapping[self.dictionary[w.lower()]] \
-                                              for w in candidate_summary if w.lower() in self.dictionary])
+        candidate_summary_indexes = self.get_candidate_summary_indexes(candidate_summary)
 
         if len(candidate_summary_indexes) == 0: # this shouldn't hopyfully happen, that we have sentence without any word in dictionary. But just in case
             return self.max_distance # let's not choose sentences that contains no known words
 
-        candidate_document_distances = self.distances[:, candidate_summary_indexes]
-        # before selecting minimun distances, let's avoid selecting, that the nearest one is the point himself
-        cand_sums = candidate_document_distances[candidate_summary_indexes]
-        np.fill_diagonal(cand_sums, 1000) # let's put big value so that diagonal will not be chosen
-        candidate_document_distances[candidate_summary_indexes] = cand_sums
-        nearests_document_word_distances = candidate_document_distances.min(axis=1)
-        # add here scaling function
+        nearests_document_word_distances, _ = self.nearest_neighbors(self.distances, candidate_summary_indexes)
         return -nearests_document_word_distances.sum()
 
     def get_positions(self, candidate_summary):
@@ -94,7 +109,7 @@ class EmbeddingsBasedSummary:
         :return: array of words
         """
         assert len(sentences) > 0, "Provide at least one sentence."
-        return np.hstack(np.array([np.array(s.split()) for s in sentences]))
+        return np.hstack([np.array(word_tokenize(s, language="finnish")) for s in sentences])
 
     def modified_greedy_algrorithm(self, summary_size):
         """
@@ -130,23 +145,37 @@ class EmbeddingsBasedSummary:
         s_star = sentences_left[s_candidates.argmax()]
 
         if len(candidate_summary) == 0: # summary_size smaller than any of sentences
-            return np.array([]),np.array([])
+            return np.array([]),np.array([]), np.array([])
 
         # and now choose eiher the best sentence or combination, algorithm line 7
         if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
-            return self.get_positions(np.array([s_star]))
+            final_summary = np.array([s_star])
         else:
-            return self.get_positions(candidate_summary)
+            final_summary = candidate_summary
 
-    def summarize(self, summary_length = 1000):
-        return self.modified_greedy_algrorithm(summary_length)
+        sentences, positions = self.get_positions(final_summary)
+        summary_indexes = self.get_candidate_summary_indexes(self.split_sentences(final_summary))
+        if len(summary_indexes) == 0:
+            return sentences,positions,np.array([])
+        _, nearest_neighbors = self.nearest_neighbors(self.distances, summary_indexes)
+        nearest_words = np.array([self.reversed_dictionary[self.reversed_distance_index_mapping[i]] \
+                                  for i in nearest_neighbors])
+
+        return sentences, positions, nearest_words
+
+    def summarize(self, summary_length = 1000,return_words=False):
+        selected_sentences, positions, nearest_words = self.modified_greedy_algrorithm(summary_length)
+        if return_words:
+            return selected_sentences, positions, [self.dictionary[w] for w in self.words], \
+                   [self.dictionary[nw] for nw in nearest_words]
+        return selected_sentences, positions
 
     def redis_client(self):
         return redis.Redis(self.redis_address, port=self.redis_port)
 
     def fetch_distances(self, words):
         """
-        Connects to redis database, that is supposed to contain distances between all words, and fetches only words needed.
+        Connects to redis database, that contains distances between all words, and fetches only words needed.
         Vocabulary of each individuel text is supposed to contain so few words that they fit to memory.
         :param words:
         :return: distances and transformations for indexes

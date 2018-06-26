@@ -41,12 +41,22 @@
                          </div>
                      </div>
                  </div>
+                 <div id="return_justification">
+                    <p>
+                      Tuotetaanko samalla perustelu :
+                      <div>
+                          <input type="radio" name="return_justification" value="True" checked id="true"> <label for="true">Kyllä</label>
+                          <input type="radio" name="return_justification" value="False" id="false"> <label for="false"> Ei </label><br>
+                      </div>
+                     </p><br>
+                 </div>
                  <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
             </form>
             <div id="in_progress"></div>
             <div id="output_div">
 
             </div>
+            <canvas width="1000px" height="750px" id="visualisation_canvas"></canvas>
             <div id="error_output">
 
             </div>
