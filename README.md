@@ -44,3 +44,9 @@ python3 embeddings/learn_embeddings.py "judgements/data" "embeddings/data/"
 python3 embeddings/calcul_distances.py
 ```
 where first parameter is the location of texts used for training and second one is the destination of embeddings and dictionary.
+
+Run evaluations
+```bash
+cd embeddings/evaluation
+python3 evaluate_embeddings.py
+```
