@@ -1,2 +1,2 @@
 
-python3.5 fetch.py 200
+python3 fetch.py 100000

@@ -6,7 +6,7 @@ judgements/data/*
 *.npz
 .ipynb_checkpoints
 *.npy
-*sandbox.ipynb
 *sandbox.py
 *.ipynb
 result.png
+embeddings/embeddings_config.json
