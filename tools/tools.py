@@ -10,10 +10,9 @@ def load_data(dir_path, N=-1):
     :param N how many to read, -1 means all:
     :return: pandas.DataFrame with data
     """
+    files = os.listdir(dir_path) if N == -1 else os.listdir(dir_path)[:N]
     data = []
-    for i, filename in enumerate(os.listdir(dir_path)):
-        if N > 0 and i > N:
-            break
+    for i, filename in enumerate(files):
         if filename.endswith(".txt"):
             path = os.path.join(dir_path, filename)
             with open(path) as f:

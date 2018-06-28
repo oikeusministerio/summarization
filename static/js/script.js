@@ -81,7 +81,11 @@ function send(e) {
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "file_upload_input") {
-        sendFile(method,summary_length,returnJustification)
+        if( document.getElementById("file").files.length == 0 ){
+            showError("Anna tiedosto tai syötä teksti.");
+        } else {
+            sendFile(method,summary_length,returnJustification)
+        }
     } else {
         sendText(method,summary_length,returnJustification)
     }
@@ -89,6 +93,8 @@ function send(e) {
 
 // modify this to more pretty
 function showError(text) {
+    console.error(text)
+    document.getElementById("in_progress").innerHTML = ""
     document.getElementById("error_output").innerHTML = text
     document.getElementById("output_div").innerHTML = ""
 }

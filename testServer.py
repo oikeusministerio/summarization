@@ -3,8 +3,10 @@ import unittest
 from flask import Flask
 from flask_testing import TestCase
 import json
-from io import BytesIO, StringIO
+from io import BytesIO
 from urllib import parse
+from tools.tools import load_data
+import timeout_decorator
 
 from server import get_app
 
@@ -34,27 +36,29 @@ class TestServer(TestCase):
         app.config['TESTING'] = True
         return app
 
+    @timeout_decorator.timeout(2)
     def test_index_is_rendered(self):
         response = self.client.get("/")
 
         self.assertTrue('text/html' in response.content_type)
 
+    #@timeout_decorator.timeout(2)
     def test_summarization_embedding(self):
         summary_length = 200
-        with open("judgements/data/1985_II10.txt", 'r') as f:
-            text = f.read()
-
+        data = load_data("judgments/data", N=1)
+        text = data.iloc[0]['text']
+        #import pdb
+        #pdb.set_trace()
         response_json = post_text(self.client, text, summary_length, "embedding")
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
-
+    @timeout_decorator.timeout(2)
     def test_summarization_graph(self):
         summary_length = 350
-        with open("judgements/data/1985_II10.txt", 'r') as f:
-            text = f.read()
+        text = load_data("judgments/data/", N=2).iloc[1]['text']
 
         response_json = post_text(self.client, text, summary_length, "graph")
         summary = response_json['summary']
@@ -62,6 +66,7 @@ class TestServer(TestCase):
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
+    @timeout_decorator.timeout(5)
     def test_summarization_with_docx(self):
         summary_lengths = [50, 100,200,500]
         methods = ["embedding","graph"]
@@ -82,16 +87,17 @@ class TestServer(TestCase):
                             first_sentence = summary.split('.')[0]
                             self.assertTrue(first_sentence in summary)
 
+    @timeout_decorator.timeout(2)
     def test_visualisation(self):
         response = self.client.get('/visualize/embeddings?words=' + parse.quote(str([1,2,3,4]), safe='~()*!.\'') + \
                                    '&neighbors=' + parse.quote(str([1,2,3,4]), safe='~() *!.\''))
 
         self.assertIsNotNone(response.data)
 
+    @timeout_decorator.timeout(2)
     def test_graph_summary_that_ranking_is_returned(self):
         summary_length = 200
-        with open("judgements/data/1997_170.txt", 'r') as f:
-            text = f.read()
+        text = load_data("judgments/data/", N=3).iloc[2]['text']
         response = post_text(self.client,text, summary_length, "graph")
         self.assertTrue('ranking' in response)
         self.assertTrue('positions' in response)

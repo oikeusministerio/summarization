@@ -8,3 +8,4 @@ flask-swagger
 redis
 python-docx
 Flask-Testing
+timeout-decorator

@@ -87,21 +87,24 @@ class SummaryAPI(MethodView):
         method = request.json["method"]
         return_justification = request.json['return_justification']
 
-        if return_justification:
-            if method == 'embedding':
-                summary, positions,words, neighbors = self.summarizer.embedding_summary_with_nearest_neighbors(text, length)
-                return return_json(json.dumps(
-                    {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
-                ), 201)
-            else:
-                summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
-                return return_json(json.dumps(
-                    {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
-                ), 201)
+        try:
+            if return_justification:
+                if method == 'embedding':
+                    summary, positions,words, neighbors = self.summarizer.embedding_summary_with_nearest_neighbors(text, length)
+                    return return_json(json.dumps(
+                        {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
+                    ), 201)
+                else:
+                    summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
+                    return return_json(json.dumps(
+                        {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
+                    ), 201)
 
 
-        summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
-        return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
+            summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
+            return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
+        except AssertionError:
+            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method, please try other one.'}), 404)
 
 ALLOWED_EXTENSIONS = ['docx'] # let's add more extensions, like .txt, when they are implemented
 

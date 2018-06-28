@@ -3,7 +3,7 @@ import os
 import tensorflow as tf
 import math
 from nltk import word_tokenize
-
+import re
 import numpy as np
 import collections
 import random
@@ -19,8 +19,10 @@ def build_dataset(words, n_words):
     count = [['UNK', -1]]
     count.extend(collections.Counter(words).most_common(n_words - 1))
     dictionary = dict()
+    only_alphabet = re.compile('^[A-z]+$')
     for word, _ in count:
-        dictionary[word] = len(dictionary)
+        if only_alphabet.match(word):
+            dictionary[word] = len(dictionary)
     data = list()
     unk_count = 0
     for word in words:
