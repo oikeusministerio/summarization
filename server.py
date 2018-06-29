@@ -18,6 +18,7 @@ nltk.download('punkt') # this one installs rules for punctuation
 #inner imports
 from extractive_summary.Summarizer import Summarizer
 from extractive_summary.DocumentParser import DocumentParser
+from tools.exceptions import SummarySizeTooSmall, TextTooLong
 
 app = Flask(__name__, static_url_path='')
 
@@ -96,6 +97,7 @@ class SummaryAPI(MethodView):
                     ), 201)
                 else:
                     summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
+
                     return return_json(json.dumps(
                         {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
                     ), 201)
@@ -103,8 +105,12 @@ class SummaryAPI(MethodView):
 
             summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
             return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
-        except AssertionError:
-            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method, please try other one.'}), 404)
+        except TextTooLong as e:
+            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method'+str(e)+'Please try other one.'}), 404)
+        except SummarySizeTooSmall as e:
+            return return_json(json.dumps(
+                {'success': False, 'error': str(e) + " Please define bigger summary length."}),
+                               404)
 
 ALLOWED_EXTENSIONS = ['docx'] # let's add more extensions, like .txt, when they are implemented
 

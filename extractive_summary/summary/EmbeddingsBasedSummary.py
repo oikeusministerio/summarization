@@ -38,8 +38,8 @@ class EmbeddingsBasedSummary:
             self.embeddings = np.load(self.embeddings_file)
             self.get_redis_client = redis_client_constructor if redis_client_constructor != None else self.redis_client
             tic = time.time()
-            #self.distances, self.distance_index_mapping = self.calculate_distances(self.words)
-            self.distances, self.distance_index_mapping = self.fetch_distances_old(self.words)
+            self.distances, self.distance_index_mapping = self.calculate_distances(self.words)
+            #self.distances, self.distance_index_mapping = self.fetch_distances_old(self.words)
             self.reversed_distance_index_mapping = dict(zip(self.distance_index_mapping.values(), \
                                                             self.distance_index_mapping.keys()))
             toc = time.time()
@@ -154,23 +154,23 @@ class EmbeddingsBasedSummary:
 
         # then let's consider sentence, that is the best all alone, algorithm line 6
         sentences_left = self.sentences['sentences'].values
-        s_candidates = np.array([
-            self.nearest_neighbor_objective_function(self.split_sentences(np.array([s]))) \
-            if len(s) <= summary_size else self.max_distance
-            for s in sentences_left])
-        s_star = sentences_left[s_candidates.argmax()]
+        s_candidates = np.array([sentence_distances[i] if sentence_lengths[i] <= summary_size else self.max_distance \
+                                for i in range(len(sentence_distances))])
+        s_star_i = s_candidates.argmax()
 
         if len(candidate_summary) == 0: # summary_size smaller than any of sentences
             return np.array([]),np.array([]), np.array([])
 
         # and now choose eiher the best sentence or combination, algorithm line 7
-        if s_candidates.max() > self.nearest_neighbor_objective_function(self.split_sentences(candidate_summary)):
-            final_summary = np.array([s_star])
+        if s_candidates.max() > candidate_distances_sum:
+            final_summary = np.array([s_star_i])
         else:
             final_summary = candidate_summary
 
-        sentences, positions = self.get_positions(final_summary)
-        summary_indexes = self.get_candidate_summary_indexes(self.split_sentences(final_summary))
+        positions = final_summary
+        sentences = self.sentences['sentences'].iloc[final_summary]
+        #sentences, positions = self.get_positions(final_summary)
+        summary_indexes = self.get_candidate_summary_indexes(self.split_sentences(sentences))
         if len(summary_indexes) == 0:
             return sentences,positions,np.array([])
         _, nearest_neighbors = self.nearest_neighbors(self.distances, summary_indexes)

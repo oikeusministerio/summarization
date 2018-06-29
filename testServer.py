@@ -44,29 +44,28 @@ class TestServer(TestCase):
 
     #@timeout_decorator.timeout(2)
     def test_summarization_embedding(self):
+        text = load_data("judgments/data/", N=10).iloc[9]['text']
         summary_length = 200
-        data = load_data("judgments/data", N=1)
-        text = data.iloc[0]['text']
-        #import pdb
-        #pdb.set_trace()
         response_json = post_text(self.client, text, summary_length, "embedding")
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
-    @timeout_decorator.timeout(2)
     def test_summarization_graph(self):
         summary_length = 350
-        text = load_data("judgments/data/", N=2).iloc[1]['text']
-
+        with open('short_test_judgment.txt') as f:
+            text = f.read()
         response_json = post_text(self.client, text, summary_length, "graph")
+        #import pdb
+        #pdb.set_trace()
+        self.assertTrue('summary' in response_json)
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
-    @timeout_decorator.timeout(5)
+    @timeout_decorator.timeout(15)
     def test_summarization_with_docx(self):
         summary_lengths = [50, 100,200,500]
         methods = ["embedding","graph"]
@@ -97,7 +96,8 @@ class TestServer(TestCase):
     @timeout_decorator.timeout(2)
     def test_graph_summary_that_ranking_is_returned(self):
         summary_length = 200
-        text = load_data("judgments/data/", N=3).iloc[2]['text']
+        with open('short_test_judgment.txt') as f:
+            text = f.read()
         response = post_text(self.client,text, summary_length, "graph")
         self.assertTrue('ranking' in response)
         self.assertTrue('positions' in response)

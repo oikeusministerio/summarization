@@ -3,12 +3,16 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk import word_tokenize, sent_tokenize
 
+from tools.exceptions import SummarySizeTooSmall, TextTooLong
+
 
 class GraphBasedSummary:
 
     def __init__(self, text, threshold=0.1):
         self.sentences = self.split_document_to_sentences(text)
-        assert len(self.sentences) < 400
+        N = len(self.sentences)
+        if N > 200:
+            raise TextTooLong(" " +  str(N) + " sentences are too many for the graph based method (max 200).")
         self.dumping_factor = 0.85
         self.threshold = threshold
 
@@ -140,6 +144,9 @@ class GraphBasedSummary:
         (ATTENTION! As dealing with sentences of different size, the summary procuded will not propably be exactly that length.)
         :return: summary
         """
+        lengths = self.sentences['sentence'].apply(len)
+        if (lengths > summary_length).all():
+            raise SummarySizeTooSmall("None of sentences is shorter than given length, cannot choose any sentences.")
         ranking = self.get_ranking(self.threshold)
         df = self.sentences
         df['ranking'] = ranking
