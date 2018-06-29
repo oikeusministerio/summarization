@@ -42,7 +42,6 @@ class TestServer(TestCase):
 
         self.assertTrue('text/html' in response.content_type)
 
-    #@timeout_decorator.timeout(2)
     def test_summarization_embedding(self):
         text = load_data("judgments/data/", N=10).iloc[9]['text']
         summary_length = 200
@@ -65,9 +64,8 @@ class TestServer(TestCase):
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
-    @timeout_decorator.timeout(15)
     def test_summarization_with_docx(self):
-        summary_lengths = [50, 100,200,500]
+        summary_lengths = [100,200,500]
         methods = ["embedding","graph"]
         filenames = ["testi.docx", "testi3.docx"]
         for summary_length in summary_lengths:
@@ -86,14 +84,12 @@ class TestServer(TestCase):
                             first_sentence = summary.split('.')[0]
                             self.assertTrue(first_sentence in summary)
 
-    @timeout_decorator.timeout(2)
     def test_visualisation(self):
         response = self.client.get('/visualize/embeddings?words=' + parse.quote(str([1,2,3,4]), safe='~()*!.\'') + \
                                    '&neighbors=' + parse.quote(str([1,2,3,4]), safe='~() *!.\''))
 
         self.assertIsNotNone(response.data)
 
-    @timeout_decorator.timeout(2)
     def test_graph_summary_that_ranking_is_returned(self):
         summary_length = 200
         with open('short_test_judgment.txt') as f:

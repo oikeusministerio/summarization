@@ -41,5 +41,5 @@ textarea, #copy_paste_input {
 }
 
 #error_output {
-    background-color: red;
+    background-color: #F6CECE;
 }

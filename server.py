@@ -183,13 +183,19 @@ class SummaryFromFileAPI(MethodView):
             parsed_document, titles = parser.parse()
             summaries = {}
             for title in titles:
-                summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
-                summaries[title] = {'summary':summary,'positions':positions}
+                try:
+                    text = " ".join(parsed_document[title])
+                    summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
+                    summaries[title] = {'summary': summary, 'positions': positions}
+                except SummarySizeTooSmall as e:
+                    print("with title " + str(title) + ", " + str(e))
+                    summaries[title] = {'summary': '', 'positions': []}
+
             summaries['success'] = True
             summaries['titles'] = titles
             return return_json(json.dumps(summaries), 201)
         else:
-            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[12]}), 404)
+            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[]}), 404)
 
 class VisualisationEmbeddingAPI(MethodView):
 
