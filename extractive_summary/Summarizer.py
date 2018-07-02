@@ -1,6 +1,8 @@
 
 from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
 from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSummary
+from extractive_summary.DocumentParser import DocumentParser
+from tools.exceptions import SummarySizeTooSmall
 
 class Summarizer:
 
@@ -23,3 +25,29 @@ class Summarizer:
         sentences, positions, ranking = summarizer.summarize(summary_length=length, return_ranking=True)
         ranking = ranking.round(3)
         return " ".join(sentences), [int(p) for p in positions], ranking.values.tolist()
+
+    def summary_from_file(self, file, method, summary_length, minimum_distance):
+        parser = DocumentParser(file)
+        if '.docx' in file.filename:
+            parsed_document, titles = parser.parse_docx()
+        elif '.txt' in file.filename:
+            parsed_document, titles = parser.parse_txt()
+        else:
+            raise ValueError('File extension not supported.')
+        summaries = {}
+        print("titles: " + len(titles))
+        for title in titles:
+            print("title : " + title)
+            try:
+                text = " ".join(parsed_document[title])
+                summary, positions = self.summarize(" ".join(parsed_document[title]), method, summary_length,
+                                                               threshold=minimum_distance)
+                summaries[title] = {'summary': summary, 'positions': positions}
+            except SummarySizeTooSmall as e:
+                print("with title " + str(title) + ", " + str(e))
+                summaries[title] = {'summary': '', 'positions': []}
+
+        summaries['success'] = True
+        summaries['titles'] = titles
+
+        return summaries

@@ -19,7 +19,7 @@ def post_text(client, text,summary_length,method):
     return json.loads(response.data.decode('utf8'))
 
 def post_file(client, filename, summary_length, method):
-    with open("extractive_summary/" + filename, 'rb') as f:
+    with open("extractive_summary/test_files/" + filename, 'rb') as f:
         text = f.read()
         data = dict(
             file=(BytesIO(text), filename),

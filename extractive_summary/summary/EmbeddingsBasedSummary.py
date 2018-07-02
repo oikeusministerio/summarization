@@ -25,14 +25,12 @@ class EmbeddingsBasedSummary:
             self.dictionary = np.load(dictionary_file).item()
         self.reversed_dictionary = dict(zip(self.dictionary.values(), self.dictionary.keys()))
         self.sentences, self.words = self.split_document(text)
-        self.r = 0.25  # scaling factor, must be positive
+        self.r = 0.75  # scaling factor, must be positive
         # when searching argmax, indexes with this value are not selected
         # becouse it is so big
         self.max_distance = -10000000
         with open('extractive_summary/config.json', 'r') as f:
             config = json.load(f)
-            self.redis_address = config["redis_address"]
-            self.redis_port = config["redis_port"]
             self.embeddings_file = config["embeddings_file"]
             self.embeddings = np.load(self.embeddings_file)
             tic = time.time()
@@ -144,7 +142,6 @@ class EmbeddingsBasedSummary:
             handled = np.append(handled, s_star_i)
 
         # then let's consider sentence, that is the best all alone, algorithm line 6
-        sentences_left = self.sentences['sentences'].values
         s_candidates = np.array([sentence_distances[i] if sentence_lengths[i] <= summary_size else self.max_distance \
                                 for i in range(len(sentence_distances))])
         s_star_i = s_candidates.argmax()
@@ -158,7 +155,9 @@ class EmbeddingsBasedSummary:
         else:
             final_summary = candidate_summary
 
+        final_summary = np.sort(final_summary)
         positions = final_summary + 1 # index starts from 0 but it is better show from 1
+
         sentences = self.sentences['sentences'].iloc[final_summary]
         summary_indexes = np.array(np.unique(np.hstack(sentence_indexes[final_summary])), dtype=int)
         if len(summary_indexes) == 0:

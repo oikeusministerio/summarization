@@ -30,7 +30,9 @@ curl -v -F file=@testi.docx http://localhost:5000/summarize/file
 
 #### Run tests
 ```
-python3 -m unittest extractive_summary/summary/Test*
+python -m unittest extractive_summary/summary/Test*
+python -m unittest extractive_summary/TestDocumentParser.py
+python -m unittest testServer.py
 ```
 
 ## embeddings
