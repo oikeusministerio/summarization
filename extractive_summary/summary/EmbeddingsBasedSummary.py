@@ -130,7 +130,6 @@ class EmbeddingsBasedSummary:
                 for i in range(N)])
             distance_min_border = s_candidates.min() - 1000  # indexes with this value cannot be maximum
             s_candidates[s_candidates == 1000] = distance_min_border # this way we dont choose same twice
-            #s_candidates = (sentence_distances + candidate_distances_sum) / (sentence_lengths ** self.r)
             s_star_i = s_candidates.argmax()
             s_star = self.sentences['sentences'][s_star_i]
 

@@ -35,12 +35,10 @@ class Summarizer:
         else:
             raise ValueError('File extension not supported.')
         summaries = {}
-        print("titles: " + len(titles))
+        print("titles: " + str(len(titles)))
         for title in titles:
-            print("title : " + title)
             try:
-                text = " ".join(parsed_document[title])
-                summary, positions = self.summarize(" ".join(parsed_document[title]), method, summary_length,
+                summary, positions = self.summarize(parsed_document[title], method, summary_length,
                                                                threshold=minimum_distance)
                 summaries[title] = {'summary': summary, 'positions': positions}
             except SummarySizeTooSmall as e:

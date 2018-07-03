@@ -83,7 +83,7 @@ function send(e) {
     if (textOrFile == "copy_paste_input") {
         sendText(method,summary_length,returnJustification)
     } else {
-        var fileId = (textOrFile == "docx_file_upload_input_button") ? "docx_file" : "txt_file"
+        var fileId = (textOrFile == "docx_file_upload_input") ? "docx_file" : "txt_file"
         if( document.getElementById(fileId).files.length == 0 ){
             showError("Anna tiedosto tai syötä teksti.");
         } else {

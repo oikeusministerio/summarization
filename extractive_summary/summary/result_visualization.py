@@ -22,7 +22,7 @@ def plot_with_labels(original_embs, summary_embs, top_words, top_word_embeddings
                     textcoords='offset points',
                     ha='right',
                     va='bottom');
-    ax.legend(loc=2, prop={'size': 32})
+    ax.legend(loc=2, prop={'size': 24})
     if file_destination == None:
         plt.show()
     else:

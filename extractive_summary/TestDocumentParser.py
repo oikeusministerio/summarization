@@ -26,7 +26,7 @@ class TestDocumentParser(unittest.TestCase):
     def test_parse_txt_file(self):
         dirname, _ = os.path.split(os.path.abspath(__file__))
         for section_min_length in [30,120]:
-            for filename in ['normal_text.txt', 'big_text.txt']:
+            for filename in ['normal_text.txt', 'big_text.txt', 'average_sized_text.txt']:
                 print(filename)
                 with open(dirname + '/test_files/' + filename, 'rb') as f:
                     parser = DocumentParser(f)

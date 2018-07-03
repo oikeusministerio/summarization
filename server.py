@@ -179,21 +179,6 @@ class SummaryFromFileAPI(MethodView):
             return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}), 404)
 
         if file and allowed_file(file.filename):
-            # parser = DocumentParser(file)
-            # parsed_document, titles = parser.parse_docx()
-            # summaries = {}
-            # for title in titles:
-            #     try:
-            #         text = " ".join(parsed_document[title])
-            #         summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
-            #         summaries[title] = {'summary': summary, 'positions': positions}
-            #     except SummarySizeTooSmall as e:
-            #         print("with title " + str(title) + ", " + str(e))
-            #         summaries[title] = {'summary': '', 'positions': []}
-            #
-            # summaries['success'] = True
-            # summaries['titles'] = titles
-            # return return_json(json.dumps(summaries), 201)
             summaries = self.summarizer.summary_from_file(file,method, summary_length, minimum_distance)
             summaries['success'] = True
             return return_json(json.dumps(summaries), 201)

@@ -84,6 +84,26 @@ class TestServer(TestCase):
                             first_sentence = summary.split('.')[0]
                             self.assertTrue(first_sentence in summary)
 
+    def test_summarization_with_txt(self):
+        summary_lengths = [100,200,500]
+        methods = ["embedding","graph"]
+        filenames = ["normal_text.txt"]
+        for summary_length in summary_lengths:
+            for method in methods:
+                for filename in filenames:
+                    print(summary_length)
+                    print(method)
+                    print(filename)
+                    response_json = post_file(self.client, filename, summary_length, method)
+                    self.assertTrue(response_json['success'])
+                    self.assertTrue('titles' in response_json )
+                    for title in response_json['titles']:
+                        self.assertTrue(len(response_json[title]) <= summary_length)
+                        summary = response_json[title]['summary']
+                        if len(summary) > 0:
+                            first_sentence = summary.split('.')[0]
+                            self.assertTrue(first_sentence in summary)
+
     def test_visualisation(self):
         response = self.client.get('/visualize/embeddings?words=' + parse.quote(str([1,2,3,4]), safe='~()*!.\'') + \
                                    '&neighbors=' + parse.quote(str([1,2,3,4]), safe='~() *!.\''))

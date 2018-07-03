@@ -62,10 +62,10 @@ class DocumentParser:
         sections_starting.append(len(paragraphs))
         for i,title in enumerate(titles):
             pars = paragraphs[sections_starting[i]+1:sections_starting[i+1]]
-            parsed_document[title] = list(pars)
+            parsed_document[title] = " ".join(list(pars))
 
         if len(titles) == 0:
-            parsed_document['Sisalto'] =  list(paragraphs)
+            parsed_document['Sisalto'] =  " ".join(list(paragraphs))
             titles.append('Sisalto')
 
         return parsed_document, titles
@@ -87,7 +87,7 @@ class DocumentParser:
                                                    str(section_min_sentence) + ", there are only " + str(total_sents) + " in total."
         rx_seq = re.compile(DocumentParser.txt_section_split_by)
         sections = rx_seq.split(str(self.text))
-        sections = [s for s in sections if len(s) > 2]
+        sections = [s for s in sections if len(s.strip()) > 2]
         sections_N = len(sections)
         parsed_document = {}
         headings_candidates = []
@@ -108,7 +108,7 @@ class DocumentParser:
             j = 1
             section = sections[i + j]
             section_sents = sents_lengths[i + j]
-            if sents_left[i + j + 1] < section_min_sentence: # this means there are not enough characters/sentences to make full section.
+            if i + j + 1 < sections_N and sents_left[i + j + 1] < section_min_sentence: # this means there are not enough characters/sentences to make full section.
                 while i + j + 2 < sections_N:
                     j += 1
                     section += sections[i + j]
