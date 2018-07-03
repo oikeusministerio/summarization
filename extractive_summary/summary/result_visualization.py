@@ -47,7 +47,7 @@ def visualize_embedding_results(original_words_indexes, nearest_neighbors_indexe
     n_dimensional_embeddings = pca.fit_transform(embeddings_to_plot)
 
     tsne = TSNE(
-        perplexity=25, n_components=2, init='pca', n_iter=400)
+        perplexity=5, n_components=2, init='pca', n_iter=1000)
 
 
     two_dimensional_embeddings = tsne.fit_transform(n_dimensional_embeddings)

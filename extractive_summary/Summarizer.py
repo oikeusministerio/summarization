@@ -4,6 +4,45 @@ from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSum
 from extractive_summary.DocumentParser import DocumentParser
 from tools.exceptions import SummarySizeTooSmall
 
+from multiprocessing.dummy import Pool as ThreadPool
+import itertools
+
+def summarization_job(summarizer, parsed_document, method, summary_length, minimum_distance, title):
+    try:
+        return summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
+    except SummarySizeTooSmall as e:
+        print("with title " + str(title) + ", " + str(e))
+        return('', [])
+
+
+class MultithreadSummary:
+
+    thread_count = 5
+
+    def __init__(self, summarizer):
+        self.pool = ThreadPool(MultithreadSummary.thread_count)
+        self.summarizer = summarizer
+
+    def summarize(self, parsed_document, titles, method, summary_length, minimum_distance):
+        params = zip(itertools.repeat(self.summarizer), \
+                     itertools.repeat(parsed_document), \
+                     itertools.repeat(method), \
+                     itertools.repeat(summary_length), \
+                     itertools.repeat(minimum_distance), \
+                     titles) # this is only non constant for summarization_job
+        results = self.pool.starmap(summarization_job, params)
+        summaries = {}
+        for i,res in enumerate(results):
+            title = titles[i]
+            summary, positions = res
+            summaries[title] = {'summary': summary, 'positions': positions}
+
+        return summaries
+
+    def close(self):
+        self.pool.close()
+        self.pool.join()
+
 class Summarizer:
 
     def __init__(self, config):
@@ -34,18 +73,10 @@ class Summarizer:
             parsed_document, titles = parser.parse_txt()
         else:
             raise ValueError('File extension not supported.')
-        summaries = {}
-        print("titles: " + str(len(titles)))
-        for title in titles:
-            try:
-                summary, positions = self.summarize(parsed_document[title], method, summary_length,
-                                                               threshold=minimum_distance)
-                summaries[title] = {'summary': summary, 'positions': positions}
-            except SummarySizeTooSmall as e:
-                print("with title " + str(title) + ", " + str(e))
-                summaries[title] = {'summary': '', 'positions': []}
 
+        summarizer = self
+        ms = MultithreadSummary(summarizer)
+        summaries = ms.summarize(parsed_document, titles,method,summary_length, minimum_distance)
         summaries['success'] = True
         summaries['titles'] = titles
-
         return summaries

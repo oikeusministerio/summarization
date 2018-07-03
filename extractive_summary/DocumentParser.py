@@ -82,9 +82,17 @@ class DocumentParser:
         :return: parsed txt file
         """
         self.text = self.file.read().decode('utf8')
-        total_sents = len(sent_tokenize(self.text, language="finnish"))
-        assert total_sents > section_min_sentence, "Cannot parse text to sections of " + \
-                                                   str(section_min_sentence) + ", there are only " + str(total_sents) + " in total."
+        sents = [s for s in sent_tokenize(self.text, language="finnish") if len(s) > 2]
+        total_sents = len(sents)
+        if total_sents < section_min_sentence: # all text will fit in one section
+            parsed_document = {}
+            modified_text = self.text.replace('\n', '.').replace('..','.')
+            # do tokenizing again to verify, that title contains no newlines
+            sents = [s for s in sent_tokenize(modified_text, language="finnish") if len(s) > 2]
+            title = sents[0]
+            parsed_document[title] = " ".join(sents[1:])
+            return parsed_document, [title]
+
         rx_seq = re.compile(DocumentParser.txt_section_split_by)
         sections = rx_seq.split(str(self.text))
         sections = [s for s in sections if len(s.strip()) > 2]
