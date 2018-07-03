@@ -3,8 +3,10 @@ import unittest
 from flask import Flask
 from flask_testing import TestCase
 import json
-from io import BytesIO, StringIO
+from io import BytesIO
 from urllib import parse
+from tools.tools import load_data
+import timeout_decorator
 
 from server import get_app
 
@@ -17,7 +19,7 @@ def post_text(client, text,summary_length,method):
     return json.loads(response.data.decode('utf8'))
 
 def post_file(client, filename, summary_length, method):
-    with open("extractive_summary/" + filename, 'rb') as f:
+    with open("extractive_summary/test_files/" + filename, 'rb') as f:
         text = f.read()
         data = dict(
             file=(BytesIO(text), filename),
@@ -34,36 +36,36 @@ class TestServer(TestCase):
         app.config['TESTING'] = True
         return app
 
+    @timeout_decorator.timeout(2)
     def test_index_is_rendered(self):
         response = self.client.get("/")
 
         self.assertTrue('text/html' in response.content_type)
 
     def test_summarization_embedding(self):
+        text = load_data("judgments/data/", N=10).iloc[9]['text']
         summary_length = 200
-        with open("judgements/data/1985_II10.txt", 'r') as f:
-            text = f.read()
-
         response_json = post_text(self.client, text, summary_length, "embedding")
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
-
     def test_summarization_graph(self):
         summary_length = 350
-        with open("judgements/data/1985_II10.txt", 'r') as f:
+        with open('short_test_judgment.txt') as f:
             text = f.read()
-
         response_json = post_text(self.client, text, summary_length, "graph")
+        #import pdb
+        #pdb.set_trace()
+        self.assertTrue('summary' in response_json)
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
         self.assertTrue(len(summary) <= summary_length)
 
     def test_summarization_with_docx(self):
-        summary_lengths = [50, 100,200,500]
+        summary_lengths = [100,200,500]
         methods = ["embedding","graph"]
         filenames = ["testi.docx", "testi3.docx"]
         for summary_length in summary_lengths:
@@ -90,7 +92,7 @@ class TestServer(TestCase):
 
     def test_graph_summary_that_ranking_is_returned(self):
         summary_length = 200
-        with open("judgements/data/1997_170.txt", 'r') as f:
+        with open('short_test_judgment.txt') as f:
             text = f.read()
         response = post_text(self.client,text, summary_length, "graph")
         self.assertTrue('ranking' in response)

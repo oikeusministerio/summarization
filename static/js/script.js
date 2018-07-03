@@ -32,8 +32,8 @@ function sendText(method,summary_length,returnJustification) {
     }
 }
 
-function sendFile(method,summary_length) {
-    var files = document.getElementById("file").files
+function sendFile(fileId, method,summary_length) {
+    var files = document.getElementById(fileId).files
     if (files.length < 1) {
         showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
         document.getElementById("submit_button").disabled = false;
@@ -80,15 +80,22 @@ function send(e) {
     var returnJustification = document.querySelector('input[name="return_justification"]:checked').value;
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
-    if (textOrFile == "file_upload_input") {
-        sendFile(method,summary_length,returnJustification)
-    } else {
+    if (textOrFile == "copy_paste_input") {
         sendText(method,summary_length,returnJustification)
+    } else {
+        var fileId = (textOrFile == "docx_file_upload_input_button") ? "docx_file" : "txt_file"
+        if( document.getElementById(fileId).files.length == 0 ){
+            showError("Anna tiedosto tai syötä teksti.");
+        } else {
+            sendFile(fileId, method,summary_length,returnJustification)
+        }
     }
 }
 
 // modify this to more pretty
 function showError(text) {
+    console.error(text)
+    document.getElementById("in_progress").innerHTML = ""
     document.getElementById("error_output").innerHTML = text
     document.getElementById("output_div").innerHTML = ""
 }
@@ -124,14 +131,21 @@ function setup() {
 }
 
 function toggleTextInputField(e) {
-    if(e.value == "file_upload_input") {
+    if(e.value == "docx_file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("file_upload_input").style.display = "block";
+        document.getElementById("docx_file_upload_input").style.display = "block";
+        document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("return_justification").style.display = "none";
+    } else if (e.value == "txt_file_upload_input") {
+        document.getElementById("copy_paste_input").style.display = "none";
+        document.getElementById("docx_file_upload_input").style.display = "none";
+        document.getElementById("txt_file_upload_input").style.display = "block";
         document.getElementById("return_justification").style.display = "none";
     } else {
         document.getElementById("copy_paste_input").style.display = "block";
-        document.getElementById("file_upload_input").style.display = "none";
-        document.getElementById("return_justification").style.display = "block";
+        document.getElementById("docx_file_upload_input").style.display = "none";
+        document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("return_justification").style.display = "none";
     }
 }
 

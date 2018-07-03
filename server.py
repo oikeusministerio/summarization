@@ -18,6 +18,7 @@ nltk.download('punkt') # this one installs rules for punctuation
 #inner imports
 from extractive_summary.Summarizer import Summarizer
 from extractive_summary.DocumentParser import DocumentParser
+from tools.exceptions import SummarySizeTooSmall, TextTooLong
 
 app = Flask(__name__, static_url_path='')
 
@@ -87,23 +88,31 @@ class SummaryAPI(MethodView):
         method = request.json["method"]
         return_justification = request.json['return_justification']
 
-        if return_justification:
-            if method == 'embedding':
-                summary, positions,words, neighbors = self.summarizer.embedding_summary_with_nearest_neighbors(text, length)
-                return return_json(json.dumps(
-                    {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
-                ), 201)
-            else:
-                summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
-                return return_json(json.dumps(
-                    {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
-                ), 201)
+        try:
+            if return_justification:
+                if method == 'embedding':
+                    summary, positions,words, neighbors = self.summarizer.embedding_summary_with_nearest_neighbors(text, length)
+                    return return_json(json.dumps(
+                        {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
+                    ), 201)
+                else:
+                    summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
+
+                    return return_json(json.dumps(
+                        {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
+                    ), 201)
 
 
-        summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
-        return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
+            summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
+            return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
+        except TextTooLong as e:
+            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method'+str(e)+'Please try other one.'}), 404)
+        except SummarySizeTooSmall as e:
+            return return_json(json.dumps(
+                {'success': False, 'error': str(e) + " Please define bigger summary length."}),
+                               404)
 
-ALLOWED_EXTENSIONS = ['docx'] # let's add more extensions, like .txt, when they are implemented
+ALLOWED_EXTENSIONS = ['docx','txt']
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -170,17 +179,26 @@ class SummaryFromFileAPI(MethodView):
             return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}), 404)
 
         if file and allowed_file(file.filename):
-            parser = DocumentParser(file)
-            parsed_document, titles = parser.parse()
-            summaries = {}
-            for title in titles:
-                summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
-                summaries[title] = {'summary':summary,'positions':positions}
+            # parser = DocumentParser(file)
+            # parsed_document, titles = parser.parse_docx()
+            # summaries = {}
+            # for title in titles:
+            #     try:
+            #         text = " ".join(parsed_document[title])
+            #         summary, positions = self.summarizer.summarize(" ".join(parsed_document[title]), method, summary_length, threshold=minimum_distance)
+            #         summaries[title] = {'summary': summary, 'positions': positions}
+            #     except SummarySizeTooSmall as e:
+            #         print("with title " + str(title) + ", " + str(e))
+            #         summaries[title] = {'summary': '', 'positions': []}
+            #
+            # summaries['success'] = True
+            # summaries['titles'] = titles
+            # return return_json(json.dumps(summaries), 201)
+            summaries = self.summarizer.summary_from_file(file,method, summary_length, minimum_distance)
             summaries['success'] = True
-            summaries['titles'] = titles
             return return_json(json.dumps(summaries), 201)
         else:
-            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[12]}), 404)
+            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[]}), 404)
 
 class VisualisationEmbeddingAPI(MethodView):
 

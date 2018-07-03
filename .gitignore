@@ -1,6 +1,6 @@
 */.idea/
 */__pycache__
-judgements/data/*
+judgments/data/*
 *.pyc
 .idea
 *.npz

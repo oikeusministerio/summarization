@@ -26,15 +26,21 @@
                  <h2>Tiivistettävä teksti:</h2><br>
                  <div id="text_input">
                      <div>
-                          <input type="radio" name="text_input_mode" value="file_upload_input" checked id="file_upload_input_button" onclick="toggleTextInputField(this)">
-                          <label for="file_upload_input_button">Teksti docx tiedostossa</label>
+                          <input type="radio" name="text_input_mode" value="docx_file_upload_input" checked id="docx_file_upload_input_button" onclick="toggleTextInputField(this)">
+                          <label for="docx_file_upload_input_button">Teksti .docx tiedostossa</label>
+                          <input type="radio" name="text_input_mode" value="txt_file_upload_input" checked id="txt_file_upload_input_button" onclick="toggleTextInputField(this)">
+                          <label for="txt_file_upload_input_button">Teksti .txt tiedostossa</label>
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
                           <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
                       </div>
                      <div id="content_input_wrapper">
-                         <div id="file_upload_input">
+                         <div id="docx_file_upload_input">
                              <p>Tiedoston teksti pilkotaa kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
-                            <input id="file" type="file" name="file" accept=".docx"><br>
+                            <input id="docx_file" type="file" name="file" accept=".docx"><br>
+                         </div>
+                         <div id="txt_file_upload_input">
+                             <p>Tiedoston teksti pilkotaa kappaleisiin niin, että otsikot tunnistetaan kahdesta rivinvaihdosta ja kappaleilla on minimipituutena 15 000 merkkiä..</p>
+                            <input id="txt_file" type="file" name="file" accept=".txt"><br>
                          </div>
                          <div id="copy_paste_input">
                             <textarea id="content" >Liimaa tiivistettävä teksti tänne.</textarea><br>
@@ -56,10 +62,10 @@
             <div id="output_div">
 
             </div>
-            <canvas width="1000px" height="750px" id="visualisation_canvas"></canvas>
             <div id="error_output">
 
             </div>
+            <canvas width="1000px" height="750px" id="visualisation_canvas"></canvas>
         </div>
         <div class="footer"></div>
         <hr></hr>
