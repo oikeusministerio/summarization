@@ -5,9 +5,10 @@ get_judgements_query = '''
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX sfcl: <PREFIX_SFCL>
 
-SELECT ?j WHERE
+SELECT ?j ?l WHERE
 {
 ?j rdf:type sfcl:Judgment .
+?j sfcl:isRealizedBy ?l
 } LIMIT N
 '''
 

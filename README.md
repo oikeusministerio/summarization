@@ -46,6 +46,5 @@ where first parameter is the location of texts used for training and second one 
 
 Run evaluations
 ```bash
-cd embeddings/evaluation
-python3 evaluate_embeddings.py
+python3 embeddings/evaluation/evaluate_embeddings.py 
 ```
