@@ -9,7 +9,7 @@ import collections
 import random
 #import sys
 #sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
-from tools.tools import load_data, word_is_valid
+from summarization.tools.tools import load_data, word_is_valid
 
 #assert len(sys.argv) == 3, "Please give the path to texts and destination for the embeddings."
 

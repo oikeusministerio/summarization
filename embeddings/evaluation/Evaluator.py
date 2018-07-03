@@ -19,11 +19,6 @@ class Evaluator:
         judgement_scores['sim_score'] = pd.to_numeric(judgement_scores['sim_score'],errors='coerce')
         judgement_scores = judgement_scores.dropna()
 
-        # dir_path = '../../'
-        # with open(dir_path + 'extractive_summary/config.json', 'r') as f:
-        #     config = json.load(f)
-        # dictionary = np.load(dir_path + config['dictionary_file']).item()
-        # embeddings = np.load(dir_path + config['embeddings_file'])
         dictionary = np.load(self.dictionary_file).item()
         embeddings = np.load(self.embeddings_file)
         reference_words = np.hstack(judgement_scores[['word1','word2']].values)
