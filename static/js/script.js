@@ -103,10 +103,21 @@ function showError(text) {
 // modify this to more pretty
 function showSummary(text, positions, hasRanking, ranking) {
     document.getElementById("error_output").innerHTML = ""
-    var output = "VALITTIIN LAUSEET : " + positions + "<br> <br> "
+    var output = '<table class="summary_table"> <tr>'
+    output += "<th>VALITTIIN LAUSEET </th>"
     if (hasRanking) {
-        output += "LEX-RANK ranking " + ranking + "<br> <br>"
+        output += "<th> lauseen LEX-RANK pisteet </th>"
     }
+    output += "</tr>"
+    for(var i = 0; i<positions.length;i++) {
+        output += "<tr>"
+        output += "<td>" + positions[i] + "</td>"
+        if (hasRanking) {
+            output += "<td>" + ranking[i] + "</td>"
+        }
+        output += "</tr>"
+    }
+    output += "</table> <br><br>"
     output += "TIIVISTELMÄ: \n" + text
     document.getElementById("output_div").innerHTML = output
 }
