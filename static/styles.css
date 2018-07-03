@@ -43,3 +43,13 @@ textarea, #copy_paste_input {
 #error_output {
     background-color: #F6CECE;
 }
+
+.summary_table {
+    margin-left:auto;
+    margin-right:auto;
+    text-aling: center;
+}
+
+table, th, td {
+   border: 1px solid black;
+}
