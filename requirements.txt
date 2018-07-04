@@ -8,3 +8,4 @@ flask-swagger
 python-docx
 Flask-Testing
 timeout-decorator
+gensim

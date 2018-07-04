@@ -18,7 +18,8 @@ class EmbeddingsBasedSummary:
     Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.
     """
 
-    def __init__(self, text, dictionary_file=None, dictionary=None, redis_client_constructor=None):
+    def __init__(self, text, dictionary_file=None, dictionary=None):
+        self.word_counter = lambda s: len([w for w in word_tokenize(s) if len(w) > 1])
         assert (dictionary_file != None or dictionary != None)
         if dictionary != None:
             self.dictionary = dictionary
@@ -93,8 +94,7 @@ class EmbeddingsBasedSummary:
         sentence_word_indexes = self.precalcule_sentence_indexes(sentences_left)
         calcul_distance = lambda indexes : self.nearest_neighbor_objective_function(indexes)
         sentence_distances = np.vectorize(calcul_distance)(sentence_word_indexes)
-        sentence_length = np.vectorize(len)(sentences_left)
-        return sentence_distances, sentence_length
+        return sentence_distances
 
     def precalcule_sentence_indexes(self, sentences):
         assert len(sentences) > 0, "Provide at least one sentence."
@@ -116,11 +116,12 @@ class EmbeddingsBasedSummary:
         N = self.sentences.shape[0]
         print("precalcule")
         sentence_indexes = self.precalcule_sentence_indexes(self.sentences['sentences'].values)
-        sentence_distances, sentence_lengths = self.precalcule_sentence_distances(self.sentences['sentences'].values)
+        sentence_distances = self.precalcule_sentence_distances(self.sentences['sentences'].values)
+        sentence_lengths = self.sentences['lengths']
         candidate_summary = np.array([], dtype=int) # C in algorithm
         handled = np.array([], dtype=int)  # (C \ handled) in algorithm, in other words : list of indexes not in C (C is thing of algiruthm)
         candidate_summary_words = np.array([], dtype=int)
-        candidate_char_count = 0
+        candidate_word_count = 0
         print("iterate")
         while(handled.shape[0] < N):
             s_candidates = np.array([
@@ -133,10 +134,11 @@ class EmbeddingsBasedSummary:
             s_candidates[s_candidates == 1000] = distance_min_border # this way we dont choose same twice
             s_star_i = s_candidates.argmax()
             s_star = self.sentences['sentences'][s_star_i]
+            s_star_len = sentence_lengths[s_star_i]
 
-            if candidate_char_count + len(s_star)  <= summary_size:
+            if candidate_word_count + s_star_len  <= summary_size:
                 candidate_summary = np.append(candidate_summary, s_star_i)
-                candidate_char_count += len(self.sentences['sentences'].iloc[s_star_i])
+                candidate_word_count += s_star_len
                 candidate_summary_words = np.append(candidate_summary_words, sentence_indexes[s_star_i])
 
             handled = np.append(handled, s_star_i)
@@ -167,12 +169,13 @@ class EmbeddingsBasedSummary:
         nearest_words = np.vectorize(get_word)(nearest_neighbors)
         return sentences, positions, nearest_words
 
-    def summarize(self, summary_length = 1000,return_words=False):
-        lengths = self.sentences['sentences'].apply(len)
-        if (lengths > summary_length).all():
+    def summarize(self, word_count = 100,return_words=False):
+        lengths = self.sentences['sentences'].apply(self.word_counter)
+        self.sentences['lengths'] = lengths
+        if (lengths > word_count).all():
             raise SummarySizeTooSmall("None of sentences is shorter than given length, cannot choose any sentences.")
 
-        selected_sentences, positions, nearest_words = self.modified_greedy_algrorithm(summary_length)
+        selected_sentences, positions, nearest_words = self.modified_greedy_algrorithm(word_count)
         if return_words:
             return selected_sentences, positions, [self.dictionary[w] for w in self.words], \
                    [self.dictionary[nw] for nw in nearest_words]
