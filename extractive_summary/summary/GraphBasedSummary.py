@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-from nltk import word_tokenize, sent_tokenize
+from nltk import word_tokenize
 
 from tools.exceptions import SummarySizeTooSmall, TextTooLong
-
+from tools.tools import sentence_tokenize
 
 class GraphBasedSummary:
 
@@ -17,7 +17,7 @@ class GraphBasedSummary:
         self.threshold = threshold
 
     def split_document_to_sentences(self, text):
-        sentences = sent_tokenize(text, language="finnish")
+        sentences = sentence_tokenize(text)
         sentences = [s for s in sentences if len(s) > 3]
         # add id to give order for sentences later
         return pd.DataFrame({'position': np.arange(len(sentences)), 'sentence': np.array(sentences)})

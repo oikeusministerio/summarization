@@ -156,7 +156,7 @@ function toggleTextInputField(e) {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
-        document.getElementById("return_justification").style.display = "none";
+        document.getElementById("return_justification").style.display = "block";
     }
 }
 

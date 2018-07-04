@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import re
+from nltk import sent_tokenize
 
 def load_data(dir_path, N=-1):
     """
@@ -42,3 +43,14 @@ def word_is_valid(word):
     if has_numbers(word):
         return False
     return True
+
+def sentence_tokenize(text):
+    """
+    Outsource tokenizing to nltk, but "hard code" some rules:
+    -Upper case sequences are sentences themselfs, if they end to new line.
+    :param text:
+    :return:
+    """
+    callback = lambda pat: pat.group(0)[:-1] + '. '
+    text = re.sub(r'([A-Z][ ]*)+\n', callback, text) # add . in the end of uppercase words.
+    return sent_tokenize(text, language="finnish")

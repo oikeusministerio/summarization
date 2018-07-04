@@ -1,12 +1,13 @@
 
 import numpy as np
 import pandas as pd
-from nltk import sent_tokenize, word_tokenize
+from nltk import word_tokenize
 from sklearn.metrics.pairwise import euclidean_distances
 import json
 import time
 
 from tools.exceptions import SummarySizeTooSmall
+from tools.tools import sentence_tokenize
 
 class EmbeddingsBasedSummary:
     """
@@ -41,7 +42,7 @@ class EmbeddingsBasedSummary:
             print("calculating distances took " + str(1000 * (toc - tic)))
 
     def split_document(self, text, minimum_sentence_length=5):
-        sentences = sent_tokenize(text, language="finnish")
+        sentences = sentence_tokenize(text)
         words = word_tokenize(text, language="finnish")
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
