@@ -1,7 +1,8 @@
 
 var server_base_path = 'http://localhost:5000'
 
-function sendText(method,summary_length,returnJustification) {
+function sendText(method,returnJustification) {
+    var summary_length = document.getElementById("cp_summary_length").value
     var content = document.getElementById("content").value
     var xhr = new XMLHttpRequest();
     xhr.open("POST", server_base_path + "/summarize", true);
@@ -18,7 +19,7 @@ function sendText(method,summary_length,returnJustification) {
       document.getElementById("submit_button").disabled = false;
       var data = JSON.parse(this.responseText);
       if(data.success) {
-        if (method == 'graph' && returnJustification == "True") {
+        if (method == 'graph' && returnJustification == "True" && 'ranking' in data) {
             showSummary(data.summary, data.positions, true, data.ranking);
         } else {
             showSummary(data.summary, data.positions, false);
@@ -32,7 +33,8 @@ function sendText(method,summary_length,returnJustification) {
     }
 }
 
-function sendFile(fileId, method,summary_length) {
+function sendFile(fileId, method) {
+    var summary_length = document.getElementById("cp_summary_length").value
     var files = document.getElementById(fileId).files
     if (files.length < 1) {
         showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
@@ -73,7 +75,6 @@ function send(e) {
     document.getElementById("submit_button").disabled = true;
     document.getElementById("output_div").innerHTML = ""
 
-    var summary_length = document.getElementById("summary_length").value
     document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
     var method = document.querySelector('input[name="method"]:checked').value;
 
@@ -81,9 +82,11 @@ function send(e) {
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "copy_paste_input") {
-        sendText(method,summary_length,returnJustification)
+        sendText(method,returnJustification)
     } else {
-        var fileId = (textOrFile == "docx_file_upload_input") ? "docx_file" : "txt_file"
+        var isDocxFile = (textOrFile == "docx_file_upload_input")
+        var fileId = isDocxFile ? "docx_file" : "txt_file"
+        var lengthId = isDocxFile ? "docx_summary_length" : "txt_summary_length"
         if( document.getElementById(fileId).files.length == 0 ){
             showError("Anna tiedosto tai syötä teksti.");
         } else {

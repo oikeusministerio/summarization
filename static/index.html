@@ -18,11 +18,7 @@
                           <input type="radio" name="method" value="graph" checked id="graph"> <label for="graph">Verkkoon perustuva (graph)</label>
                           <input type="radio" name="method" value="embedding" id="embedding"> <label for="embedding"> Sanavektoreihin perustuva (word embeddings) </label><br>
                       </div>
-                  </p><br>
-                 <p>
-                      Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
-                      <input type="number" name="quantity" min="10" max="160" value="50" id="summary_length"/>
-                  </p><br>
+                  </p>
                  <h2>Tiivistettävä teksti:</h2><br>
                  <div id="text_input">
                      <div>
@@ -33,16 +29,29 @@
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
                           <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
                       </div>
+                     <br>
                      <div id="content_input_wrapper">
                          <div id="docx_file_upload_input">
+                             <p>
+                              Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
+                              <input type="number" name="quantity" min="10" max="160" value="50" id="docx_summary_length"/>
+                             </p><br>
                              <p>Tiedoston teksti pilkotaa kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
                             <input id="docx_file" type="file" name="file" accept=".docx"><br>
                          </div>
                          <div id="txt_file_upload_input">
+                             <p>
+                              Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
+                              <input type="number" name="quantity" min="10" max="160" value="50" id="txt_summary_length"/>
+                             </p><br>
                              <p>Tiedoston teksti pilkotaa kappaleisiin niin, että otsikot tunnistetaan kahdesta rivinvaihdosta ja kappaleet ovat pituudeltaan 50 - 175 lausetta. Pidemmät kappaleet tiivistetään useassa osassa.</p>
                             <input id="txt_file" type="file" name="file" accept=".txt"><br>
                          </div>
                          <div id="copy_paste_input">
+                             <p>
+                              Tiivistelmän pituus (sanoissa, välillä 10 ja 300)
+                              <input type="number" name="quantity" min="10" max="300" value="50" id="cp_summary_length"/>
+                             </p><br>
                             <textarea id="content" >Liimaa tiivistettävä teksti tänne.</textarea><br>
                          </div>
                      </div>
