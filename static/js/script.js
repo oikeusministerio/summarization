@@ -33,9 +33,7 @@ function sendText(method,returnJustification) {
     }
 }
 
-function sendFile(fileId, method) {
-    var summary_length = document.getElementById("cp_summary_length").value
-    var files = document.getElementById(fileId).files
+function sendFile(files, method,summaryLength, returnJustification) {
     if (files.length < 1) {
         showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
         document.getElementById("submit_button").disabled = false;
@@ -46,7 +44,7 @@ function sendFile(fileId, method) {
     fd.append("file", file);
 
     var xhr = new XMLHttpRequest();
-    var path =  server_base_path + "/summarize/file?summary_length="+summary_length
+    var path =  server_base_path + "/summarize/file?summary_length="+summaryLength
                                     + "&method=" +method+ "&minimum_distance=0.1"
     xhr.open('POST', path, true);
 
@@ -87,10 +85,13 @@ function send(e) {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"
         var lengthId = isDocxFile ? "docx_summary_length" : "txt_summary_length"
+        var summaryLength = document.getElementById(lengthId).value
+        var files = document.getElementById(fileId).files
         if( document.getElementById(fileId).files.length == 0 ){
             showError("Anna tiedosto tai syötä teksti.");
         } else {
-            sendFile(fileId, method,summary_length,returnJustification)
+            debugger;
+            sendFile(files, method,summaryLength,returnJustification)
         }
     }
 }

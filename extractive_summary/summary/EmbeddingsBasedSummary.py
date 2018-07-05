@@ -35,12 +35,9 @@ class EmbeddingsBasedSummary:
             config = json.load(f)
             self.embeddings_file = config["embeddings_file"]
             self.embeddings = np.load(self.embeddings_file)
-            tic = time.time()
             self.distances, self.distance_index_mapping = self.calculate_distances(self.words)
             self.reversed_distance_index_mapping = dict(zip(self.distance_index_mapping.values(), \
                                                             self.distance_index_mapping.keys()))
-            toc = time.time()
-            print("calculating distances took " + str(1000 * (toc - tic)))
 
     def split_document(self, text, minimum_sentence_length=5):
         sentences = sentence_tokenize(text)
@@ -48,11 +45,12 @@ class EmbeddingsBasedSummary:
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
         words = np.array([w for w in words if len(w) > 1])
-        sentences = [s for s in sentences if len(s) >= minimum_sentence_length]
 
         sentences_without_newlines = []
         for s in sentences:
             s = s.strip()
+            if len(s) < minimum_sentence_length:
+                continue
             if "\n" in s:
                 for split in s.split("\n"):
                     split = split.strip()
@@ -114,7 +112,6 @@ class EmbeddingsBasedSummary:
         #sentences_left = self.sentences['sentences'].values # U in algorithm
         #sentences_left = np.array(self.sentences.index.tolist())  # U in algorithm
         N = self.sentences.shape[0]
-        print("precalcule")
         sentence_indexes = self.precalcule_sentence_indexes(self.sentences['sentences'].values)
         sentence_distances = self.precalcule_sentence_distances(self.sentences['sentences'].values)
         sentence_lengths = self.sentences['lengths']
@@ -122,7 +119,6 @@ class EmbeddingsBasedSummary:
         handled = np.array([], dtype=int)  # (C \ handled) in algorithm, in other words : list of indexes not in C (C is thing of algiruthm)
         candidate_summary_words = np.array([], dtype=int)
         candidate_word_count = 0
-        print("iterate")
         while(handled.shape[0] < N):
             s_candidates = np.array([
                 self.nearest_neighbor_objective_function(
@@ -171,6 +167,7 @@ class EmbeddingsBasedSummary:
 
     def summarize(self, word_count = 100,return_words=False):
         lengths = self.sentences['sentences'].apply(self.word_counter)
+        lengths = np.maximum(lengths, np.ones(lengths.shape[0], dtype=int))
         self.sentences['lengths'] = lengths
         if (lengths > word_count).all():
             raise SummarySizeTooSmall("None of sentences is shorter than given length, cannot choose any sentences.")

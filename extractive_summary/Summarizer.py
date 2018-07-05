@@ -1,4 +1,7 @@
 
+import numpy as np
+import pandas as pd
+
 from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
 from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSummary
 from extractive_summary.DocumentParser import DocumentParser
@@ -7,34 +10,72 @@ from tools.exceptions import SummarySizeTooSmall
 from multiprocessing.dummy import Pool as ThreadPool
 import itertools
 
-def summarization_job(summarizer, parsed_document, method, summary_length, minimum_distance, title):
+def summarization_job_tpt(summarizer, parsed_document, method, summary_length, minimum_distance, title):
+    """
+    tpt = thread per title
+    """
     try:
-        return summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
+        s, p = summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
+        return (title, s, p)
     except SummarySizeTooSmall as e:
         print("with title " + str(title) + ", " + str(e))
-        return('', [])
+        return(title, '', [])
 
+
+def summarization_job_ss(summarizer, parsed_document, method, summary_length, minimum_distance, titles):
+    """
+    ss = split sequential
+    """
+    results = []
+    for title in titles:
+        try:
+            s,p = summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
+            results.append((title, s, p))
+        except SummarySizeTooSmall as e:
+            print("with title " + str(title) + ", " + str(e))
+            return (title, '', [])
+    return results
 
 class MultithreadSummary:
+    """
+    Two modes: start new thread for each title (thread_per_title) or create few sequential ones (split_sequential).
+    https://medium.com/idealo-tech-blog/parallelisation-in-python-an-alternative-approach-b2749b49a1e
+
+    """
 
     thread_count = 5
 
-    def __init__(self, summarizer):
+    def __init__(self, summarizer, mode="split_sequantial"):
         self.pool = ThreadPool(MultithreadSummary.thread_count)
         self.summarizer = summarizer
+        self.mode = mode
 
-    def summarize(self, parsed_document, titles, method, summary_length, minimum_distance):
+    def summarize(self, parsed_document, original_titles, method, summary_length, minimum_distance):
+        if self.mode == "split_sequantial":
+            titles = np.array_split(np.array(original_titles), MultithreadSummary.thread_count)
+        else:
+            titles = original_titles
+
         params = zip(itertools.repeat(self.summarizer), \
                      itertools.repeat(parsed_document), \
                      itertools.repeat(method), \
                      itertools.repeat(summary_length), \
                      itertools.repeat(minimum_distance), \
                      titles) # this is only non constant for summarization_job
-        results = self.pool.starmap(summarization_job, params)
+
+        if self.mode == "split_sequantial":
+            result_lists = self.pool.starmap(summarization_job_ss, params)
+            results = []
+            for res_list in result_lists:
+                for res in res_list:
+                    results.append(res)
+        else:
+            results = self.pool.starmap(summarization_job_tpt, params)
+
+        results = pd.DataFrame(results,columns=['title', 'summary', 'position'])
         summaries = {}
-        for i,res in enumerate(results):
-            title = titles[i]
-            summary, positions = res
+        for i in range(results.shape[0]):
+            title,summary, positions = results.iloc[i]
             summaries[title] = {'summary': summary, 'positions': positions}
 
         return summaries

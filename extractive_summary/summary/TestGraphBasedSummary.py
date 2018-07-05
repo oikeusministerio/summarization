@@ -1,7 +1,6 @@
 
 import numpy as np
 import unittest
-from .GraphBasedSummaryOld import GraphBasedSummaryOld
 from .GraphBasedSummary import GraphBasedSummary
 from tools.tools import load_data
 from nltk import word_tokenize

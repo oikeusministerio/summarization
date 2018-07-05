@@ -32,6 +32,7 @@ curl -v -F file=@testi.docx http://localhost:5000/summarize/file
 ```
 python -m unittest extractive_summary/summary/Test*
 python -m unittest extractive_summary/TestDocumentParser.py
+python -m unittest extractive_summary/TestSummarizer.py
 python -m unittest testServer.py
 ```
 
