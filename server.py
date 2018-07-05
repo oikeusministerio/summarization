@@ -95,13 +95,6 @@ class SummaryAPI(MethodView):
                     return return_json(json.dumps(
                         {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
                     ), 201)
-                else:
-                    summary, positions, ranking = self.summarizer.graph_summary_with_ranking(text, length, threshold)
-
-                    return return_json(json.dumps(
-                        {'success': True, 'summary': summary, 'positions': positions, 'ranking': ranking}
-                    ), 201)
-
 
             summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
             return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
