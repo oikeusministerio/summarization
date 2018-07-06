@@ -41,7 +41,7 @@ python -m unittest testServer.py
 Train embeddings
 
 ```
-python3 embeddings/learn_embeddings.py "judgements/data" "embeddings/data/"
+python3 embeddings/learn_embeddings.py -source_dir judgments/data -destination_dir embeddings/data/
 ```
 where first parameter is the location of texts used for training and second one is the destination of embeddings and dictionary.
 
