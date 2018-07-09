@@ -1,5 +1,4 @@
 
-import os
 import tensorflow as tf
 import math
 from nltk import word_tokenize
@@ -7,11 +6,9 @@ import re
 import numpy as np
 import collections
 import random
-#import sys
-#sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
 from summarization.tools.tools import load_data, word_is_valid
 
-#assert len(sys.argv) == 3, "Please give the path to texts and destination for the embeddings."
+only_alphabet_regex = '^[^\W\d_]+$'
 
 def build_dataset(words, n_words):
     """Process raw inputs into a dataset."""
@@ -19,7 +16,7 @@ def build_dataset(words, n_words):
     count = [['UNK', -1]]
     count.extend(collections.Counter(words).most_common(n_words - 1))
     dictionary = dict()
-    only_alphabet = re.compile('^[A-z]+$')
+    only_alphabet = re.compile(only_alphabet_regex)
     for word, _ in count:
         if only_alphabet.match(word):
             dictionary[word] = len(dictionary)
@@ -97,7 +94,7 @@ class EmbeddingLearner:
 
         all_texts = " ".join(texts['text'].values).lower()
         words = word_tokenize(all_texts, language="finnish")
-        print("readed words: " + str(len(words)))
+        print("read words: " + str(len(words)))
 
         data, count, dictionary, reverse_dictionary = build_dataset(words, self.vocabulary_size)
 
