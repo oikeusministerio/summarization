@@ -7,10 +7,8 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import re
 import time
 from tensorflow.python.layers.core import Dense
-from tensorflow.python.ops.rnn_cell_impl import _zero_state_tensors
 print('TensorFlow Version: {}'.format(tf.__version__))
 
 import sys
@@ -22,25 +20,13 @@ import re
 import preprocessing as prep
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
 
-
-# In[2]:
-
-
-texts = load_data('../judgments/data/')[:1000]
-
-section_splitter = re.compile(txt_section_split_by)
-parser = lambda text: [s.strip() for s in section_splitter.split(text) if len(s.strip()) > 2][-1]
-targets = pd.DataFrame({'text':texts['text'].apply(parser)})
-
-X_train_df, X_test_df, y_train_df, y_test_df = train_test_split(texts, targets, test_size=0.2)
+texts = load_data('../judgments/data/')
 
 embeddings = np.load('../embeddings/data/embeddings.npy')
 dictionary = np.load('../embeddings/data/dictionary.npy').item()
 # Special tokens that will be added to our vocab
-codes = ["<UNK>","<PAD>","<EOS>","<GO>"]   
+codes = ["<UNK>","<PAD>","<EOS>","<GO>"]
 # Add codes to vocab
 for code in codes:
     dictionary[code] = len(dictionary)
@@ -48,24 +34,17 @@ reverse_dictionary = dict(zip(range(len(dictionary.keys())),dictionary.keys()))
 
 pad_index = dictionary['<PAD>']
 
-X_train_df = X_train_df.reset_index(drop=True)
-X_test_df = X_test_df.reset_index(drop=True)
-y_train_df = y_train_df.reset_index(drop=True)
-y_test_df = y_test_df.reset_index(drop=True)
+section_splitter = re.compile(txt_section_split_by)
+parser = lambda text: [s.strip() for s in section_splitter.split(text) if len(s.strip()) > 2][-1]
+texts['target'] = texts['text'].apply(parser)
 
-X_train = prep.convert_texts_to_indexes(X_train_df, dictionary, 2000)
-y_train = prep.convert_texts_to_indexes(y_train_df, dictionary, 140)
-X_train = pad_sequences(X_train.indexes, padding='post', value=pad_index)
-y_train = pad_sequences(y_train.indexes, padding='post', value=pad_index)
+text_len = 1000
+summary_len = 100
+texts = prep.convert_texts_to_indexes(texts, dictionary, text_len, summary_len)
+X = pad_sequences(texts.text_indexes, padding='post', value=pad_index)
+Y = pad_sequences(texts.target_indexes, padding='post', value=pad_index)
 
-# Test
-X_test = prep.convert_texts_to_indexes(X_test_df, dictionary, 2000)
-y_test = prep.convert_texts_to_indexes(y_test_df, dictionary, 140)
-X_test = pad_sequences(X_test.indexes, padding='post', value=pad_index)
-y_test = pad_sequences(y_test.indexes, padding='post', value=pad_index)
-
-
-# In[4]:
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
 
 def model_inputs():
@@ -81,11 +60,11 @@ def model_inputs():
 
     return input_data, targets, lr, keep_prob, summary_length, max_summary_length, text_length
 
-def process_encoding_input(target_data, vocab_to_int, batch_size):
+def process_encoding_input(target_data, dictionary, batch_size):
     '''Remove the last word id from each batch and concat the <GO> to the begining of each batch'''
     
     ending = tf.strided_slice(target_data, [0, 0], [batch_size, -1], [1, 1])
-    dec_input = tf.concat([tf.fill([batch_size, 1], vocab_to_int['<GO>']), ending], 1)
+    dec_input = tf.concat([tf.fill([batch_size, 1], dictionary['<GO>']), ending], 1)
 
     return dec_input
 
@@ -159,7 +138,7 @@ def inference_decoding_layer(embeddings, start_token, end_token, dec_cell, initi
 
 
 def  decoding_layer(dec_embed_input, embeddings, enc_output, enc_state, vocab_size, text_length, summary_length, 
-                   max_summary_length, rnn_size, vocab_to_int, keep_prob, batch_size, num_layers):
+                   max_summary_length, rnn_size, dictionary, keep_prob, batch_size, num_layers):
     '''Create the decoding cell and attention for the training and inference decoding layers'''
     
     for layer in range(num_layers):
@@ -198,8 +177,8 @@ def  decoding_layer(dec_embed_input, embeddings, enc_output, enc_state, vocab_si
                                                   max_summary_length)
     with tf.variable_scope("decode", reuse=True):
         inference_logits = inference_decoding_layer(embeddings,  
-                                                    vocab_to_int['<GO>'], 
-                                                    vocab_to_int['<EOS>'],
+                                                    dictionary['<GO>'],
+                                                    dictionary['<EOS>'],
                                                     dec_cell, 
                                                     initial_state, 
                                                     output_layer,
@@ -213,7 +192,7 @@ def  decoding_layer(dec_embed_input, embeddings, enc_output, enc_state, vocab_si
 
 
 def seq2seq_model(input_data, target_data, keep_prob, text_length, summary_length, max_summary_length, 
-                  vocab_size, rnn_size, num_layers, vocab_to_int, batch_size):
+                  vocab_size, rnn_size, num_layers, dictionary, batch_size):
     '''Use the previous functions to create the training and inference logits'''
     
     embeddings = word_embedding_matrix
@@ -221,7 +200,7 @@ def seq2seq_model(input_data, target_data, keep_prob, text_length, summary_lengt
     enc_embed_input = tf.nn.embedding_lookup(embeddings, input_data)
     enc_output, enc_state = encoding_layer(rnn_size, text_length, num_layers, enc_embed_input, keep_prob)
     
-    dec_input = process_encoding_input(target_data, vocab_to_int, batch_size)
+    dec_input = process_encoding_input(target_data, dictionary, batch_size)
     dec_embed_input = tf.nn.embedding_lookup(embeddings, dec_input)
     
     training_logits, inference_logits  = decoding_layer(dec_embed_input, 
@@ -233,7 +212,7 @@ def seq2seq_model(input_data, target_data, keep_prob, text_length, summary_lengt
                                                         summary_length, 
                                                         max_summary_length,
                                                         rnn_size, 
-                                                        vocab_to_int, 
+                                                        dictionary,
                                                         keep_prob, 
                                                         batch_size,
                                                         num_layers)
@@ -264,26 +243,15 @@ def get_batches(summaries, texts, batch_size):
 
         yield summaries_batch, texts_batch, pad_summaries_lengths, pad_texts_lengths
 
-
-# In[7]:
-
-
-
 # Set the Hyperparameters# Set the 
-epochs = 2
+epochs = 10
 batch_size = 16
 rnn_size = 128
 num_layers = 2
 learning_rate = 0.005
 keep_probability = 0.75
 
-vocab_to_int = dictionary
-int_to_vocab = reverse_dictionary
 word_embedding_matrix = embeddings
-
-
-# In[8]:
-
 
 # Build the graph# Build t 
 train_graph = tf.Graph()
@@ -300,10 +268,10 @@ with train_graph.as_default():
                                                       text_length,
                                                       summary_length,
                                                       max_summary_length,
-                                                      len(vocab_to_int)+1,
+                                                      len(dictionary)+1,
                                                       rnn_size, 
                                                       num_layers, 
-                                                      vocab_to_int,
+                                                      dictionary,
                                                       batch_size)
     
     # Create tensors for the training logits and inference logits
@@ -336,7 +304,7 @@ print("Graph is built.")
 # Train the Model
 learning_rate_decay = 0.95
 min_learning_rate = 0.0005
-display_step = 20 # Check training loss after every 20 batches
+display_step = 10 # Check training loss after every 20 batches
 stop_early = 0 
 stop = 3 # If the update loss does not decrease in 3 consecutive update checks, stop training
 per_epoch = 3 # Make 3 update checks per epoch
@@ -346,8 +314,11 @@ update_loss = 0
 batch_loss = 0
 summary_update_loss = [] # Record the update losses for saving improvements in the model
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth=True
+
 checkpoint = "./best_model.ckpt"
-with tf.Session(graph=train_graph, config=tf.ConfigProto(log_device_placement=True)) as sess:
+with tf.Session(graph=train_graph, config=config) as sess:
     sess.run(tf.global_variables_initializer())
     
     # If we want to continue training a previous session
@@ -379,7 +350,7 @@ with tf.Session(graph=train_graph, config=tf.ConfigProto(log_device_placement=Tr
                       .format(epoch_i,
                               epochs, 
                               batch_i, 
-                              len(sorted_texts_short) // batch_size, 
+                              len(X_train) // batch_size,
                               batch_loss / display_step, 
                               batch_time*display_step))
                 batch_loss = 0
@@ -394,15 +365,13 @@ with tf.Session(graph=train_graph, config=tf.ConfigProto(log_device_placement=Tr
                     stop_early = 0 
                     saver = tf.train.Saver() 
                     saver.save(sess, checkpoint)
-
                 else:
                     print("No Improvement.")
                     stop_early += 1
                     if stop_early == stop:
                         break
                 update_loss = 0
-            
-                    
+                
         # Reduce learning rate, but not below its minimum value
         learning_rate *= learning_rate_decay
         if learning_rate < min_learning_rate:
@@ -412,48 +381,4 @@ with tf.Session(graph=train_graph, config=tf.ConfigProto(log_device_placement=Tr
             print("Stopping Training.")
             break
 
-
-# In[ ]:
-
-
-input_sentence, text = X_test_df[['text', 'indexes']].iloc[0]
-
-checkpoint = "./best_model.ckpt"
-
-loaded_graph = tf.Graph()
-with tf.Session(graph=loaded_graph) as sess:
-    # Load saved model
-    loader = tf.train.import_meta_graph(checkpoint + '.meta')
-    loader.restore(sess, checkpoint)
-
-    input_data = loaded_graph.get_tensor_by_name('input:0')
-    logits = loaded_graph.get_tensor_by_name('predictions:0')
-    text_length = loaded_graph.get_tensor_by_name('text_length:0')
-    summary_length = loaded_graph.get_tensor_by_name('summary_length:0')
-    keep_prob = loaded_graph.get_tensor_by_name('keep_prob:0')
-    
-    #Multiply by batch_size to match the model's input parameters
-    answer_logits = sess.run(logits, {input_data: [text]*batch_size, 
-                                      summary_length: [np.random.randint(5,8)], 
-                                      text_length: [len(text)]*batch_size,
-                                      keep_prob: 1.0})[0] 
-
-# Remove the padding from the tweet
-pad = vocab_to_int["<PAD>"] 
-
-#print('Original Text:', input_sentence)
-
-print('\nText')
-#print('  Word Ids:    {}'.format([i for i in text]))
-#print('  Input Words: {}'.format(" ".join([int_to_vocab[i] for i in text])))
-
-print('\nSummary')
-print('  Word Ids:       {}'.format([i for i in answer_logits if i != pad]))
-print('  Response Words: {}'.format(" ".join([int_to_vocab[i] for i in answer_logits if i != pad])))
-
-
-# In[ ]:
-
-
-answer_logits
 
