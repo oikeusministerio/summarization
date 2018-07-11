@@ -18,8 +18,8 @@ def build_dataset(words, n_words):
     dictionary = dict()
     only_alphabet = re.compile(only_alphabet_regex)
     for word, _ in count:
-        #if only_alphabet.match(word):
-        dictionary[word] = len(dictionary)
+        if only_alphabet.match(word):
+            dictionary[word] = len(dictionary)
     data = list()
     unk_count = 0
     for word in words:
