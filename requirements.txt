@@ -9,3 +9,5 @@ python-docx
 Flask-Testing
 timeout-decorator
 gensim
+"dask[dataframe]"
+"dask[distributed]"

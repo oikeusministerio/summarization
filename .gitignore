@@ -10,3 +10,6 @@ judgments/data/*
 *.ipynb
 result.png
 embeddings/embeddings_config.json
+*.ckpt.*
+*checkpoint
+judgments/test_data/*
