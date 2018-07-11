@@ -67,6 +67,42 @@ function sendFile(files, method,summaryLength, returnJustification) {
     xhr.send(fd);
 }
 
+function sendDirectory(files, method,summaryLength) {
+    if (files.length < 1) {
+        showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
+        document.getElementById("submit_button").disabled = false;
+        return;
+    }
+    var fd = new FormData();
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i]
+        fd.append("file-"+i, file);
+    }
+
+    var xhr = new XMLHttpRequest();
+    var path =  server_base_path + "/summarize/directory?summary_length="+summaryLength
+                                    + "&method=" +method+ "&minimum_distance=0.1"
+    xhr.open('POST', path, true);
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var percentComplete = (e.loaded / e.total) * 100;
+          console.log(percentComplete + '% uploaded');
+        }
+    };
+    xhr.onload = function() {
+        document.getElementById("in_progress").innerHTML = ""
+        document.getElementById("submit_button").disabled = false;
+        var data = JSON.parse(this.responseText);
+        if(data.success) {
+            showMultiSectionSummary(data);
+        } else {
+            showError(data.error)
+        }
+    };
+    xhr.send(fd);
+}
+
 function send(e) {
     e.preventDefault();
     clearCanvas();
@@ -81,6 +117,10 @@ function send(e) {
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "copy_paste_input") {
         sendText(method,returnJustification)
+    } else if(textOrFile == "directory_input") {
+        var summaryLength = document.getElementById("dir_summary_length").value
+        var files = document.getElementById("multiple_files").files
+        sendDirectory(files, method, summaryLength)
     } else {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"
@@ -90,7 +130,6 @@ function send(e) {
         if( document.getElementById(fileId).files.length == 0 ){
             showError("Anna tiedosto tai syötä teksti.");
         } else {
-            debugger;
             sendFile(files, method,summaryLength,returnJustification)
         }
     }
@@ -150,17 +189,26 @@ function toggleTextInputField(e) {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "block";
         document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("directory_input").style.display = "none";
         document.getElementById("return_justification").style.display = "none";
     } else if (e.value == "txt_file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "block";
+        document.getElementById("directory_input").style.display = "none";
         document.getElementById("return_justification").style.display = "none";
-    } else {
+    } else if (e.value == "copy_paste_input") {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("directory_input").style.display = "none";
         document.getElementById("return_justification").style.display = "block";
+    } else {
+        document.getElementById("copy_paste_input").style.display = "none";
+        document.getElementById("docx_file_upload_input").style.display = "none";
+        document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("directory_input").style.display = "block";
+        document.getElementById("return_justification").style.display = "none";
     }
 }
 

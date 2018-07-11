@@ -11,6 +11,7 @@ nltk.download('punkt') # this one installs rules for punctuation
 from server_routes.SummaryAPI import SummaryAPI
 from server_routes.SummaryFromFileAPI import SummaryFromFileAPI
 from server_routes.VisualisationEmbeddingAPI import VisualisationEmbeddingAPI
+from server_routes.SummarizeDirectoryAPI import SummaryDirectoryAPI
 
 app = Flask(__name__, static_url_path='')
 
@@ -19,9 +20,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 summary_view = SummaryAPI.as_view('summaries')
 file_summary_view = SummaryFromFileAPI.as_view("summaries from file")
+directory_view = SummaryDirectoryAPI.as_view("summarize directory")
 visualisation_view = VisualisationEmbeddingAPI.as_view("visualisation")
+
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])
 app.add_url_rule('/summarize/file', view_func=file_summary_view, methods=["POST"])
+app.add_url_rule('/summarize/directory', view_func=directory_view, methods=["POST"])
 app.add_url_rule('/visualize/embeddings', view_func=visualisation_view, methods=["GET"])
 
 @app.route('/js/<path:path>')

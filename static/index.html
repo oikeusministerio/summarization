@@ -28,6 +28,8 @@
                           <label for="txt_file_upload_input_button">Teksti .txt tiedostossa</label>
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
                           <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
+                          <input type="radio" name="text_input_mode" value="directory_input" id="directory_input_button" onclick="toggleTextInputField(this)">
+                          <label for="directory_input_button"> Kansiollinen tiedostoja </label><br>
                       </div>
                      <br>
                      <div id="content_input_wrapper">
@@ -46,6 +48,14 @@
                              </p><br>
                              <p>Tiedoston teksti pilkotaa kappaleisiin niin, että otsikot tunnistetaan kahdesta rivinvaihdosta ja kappaleet ovat pituudeltaan 50 - 175 lausetta. Pidemmät kappaleet tiivistetään useassa osassa.</p>
                             <input id="txt_file" type="file" name="file" accept=".txt"><br>
+                         </div>
+                         <div id="directory_input">
+                             <p>
+                                 Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
+                                 <input type="number" name="quantity" min="10" max="160" value="50" id="dir_summary_length"/>
+                             </p><br>
+                             <p>Kansiollinen tiedostoja</p>
+                             <input id="multiple_files" type="file" multiple />
                          </div>
                          <div id="copy_paste_input">
                              <p>
