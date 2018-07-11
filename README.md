@@ -49,3 +49,23 @@ Run evaluations
 ```bash
 python3 embeddings/evaluation/evaluate_embeddings.py 
 ```
+
+## Abstractive summarization
+This one is not deployed to server, still just a experiment.
+
+The next script takes texts (here it is supposed they are like the judgments), parses the last section
+of each text to be used as target (summary). Those texts are then used to train Encoder/decoder-summarizer.
+```
+python3 abstractive_summary/abstractive_summarization_learning.py -source_dir 'judgments/data/' \
+-embeddings_dir 'embeddings/data/' -texts_length 300 -target_length 40
+```
+-1 in text_length and target_length means, that let's use all words in texts and their targets. 
+In case of legal juggment dataset, the longest texts are 80 000 words long and they do not fit to 6GB GPU, so we have to work with shorter or truncated texts.
+
+The number of epocs is by default 10, can be set with flag -epochs 100.
+
+Once model is trained, summarize: 
+```
+python3 abstractive_summary/summarize.py -source_dir judgments/test_data/ -embeddings_dir embeddings/data/ -index 1 -summary_length 10
+
+```

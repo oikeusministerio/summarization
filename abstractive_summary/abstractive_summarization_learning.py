@@ -14,20 +14,32 @@ print('TensorFlow Version: {}'.format(tf.__version__))
 import sys
 import os
 sys.path.append(os.path.abspath("../")) # not maybe the best way to structure but MVP
-from tools.tools import load_data
+from summarization.tools.tools import load_data
 txt_section_split_by = "\n[ ]*\n" 
 import re
 import preprocessing as prep
 from keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
+import argparse
 
-texts = load_data('../judgments/data/')
+parser = argparse.ArgumentParser(description="Learn model for abstractive summarization.")
+optional = parser._action_groups.pop()
+required = parser.add_argument_group('required arguments')
+required.add_argument('-source_dir', help='Path to raw text files used for learning', required=True)
+required.add_argument('-embeddings_dir', help='Path to folder that contains embeddings and dictionary.', required=True)
+required.add_argument('-texts_length',
+                      help='Fixed size of source texts. Texts that have less words than texts_length are padded with empty words. ' + \
+                      'If there are more words in text than texts_length, those extra words are discarded. -1 takes every word from texts and targets.',
+                      required=True, type=int)
+required.add_argument('-target_length', help='Similar with texts_length but applies to targets. -1 takes every word from texts and targets.',
+                      required=True, type=int)
+required.add_argument('-epochs', nargs='?', const=10, type=int, default=10)
+args = parser.parse_args()
 
-embeddings = np.load('../embeddings/data/embeddings.npy')
-dictionary = np.load('../embeddings/data/dictionary.npy').item()
-# Special tokens that will be added to our vocab
+texts = load_data(args.source_dir) #'judgments/data/'
+
+embeddings = np.load(args.embeddings_dir + 'embeddings.npy') # embeddings/data/
+dictionary = np.load(args.embeddings_dir + 'dictionary.npy').item()
 codes = ["<UNK>","<PAD>","<EOS>","<GO>"]
-# Add codes to vocab
 for code in codes:
     dictionary[code] = len(dictionary)
 reverse_dictionary = dict(zip(range(len(dictionary.keys())),dictionary.keys()))
@@ -38,14 +50,10 @@ section_splitter = re.compile(txt_section_split_by)
 parser = lambda text: [s.strip() for s in section_splitter.split(text) if len(s.strip()) > 2][-1]
 texts['target'] = texts['text'].apply(parser)
 
-text_len = 1000
-summary_len = 100
-texts = prep.convert_texts_to_indexes(texts, dictionary, text_len, summary_len)
+take_all = args.texts_length == -1 or args.target_length == -1
+texts = prep.convert_texts_to_indexes(texts, dictionary, args.texts_length, args.target_length, take_all=take_all)
 X = pad_sequences(texts.text_indexes, padding='post', value=pad_index)
 Y = pad_sequences(texts.target_indexes, padding='post', value=pad_index)
-
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
-
 
 def model_inputs():
     '''Create palceholders for inputs to the model'''
@@ -162,11 +170,7 @@ def  decoding_layer(dec_embed_input, embeddings, enc_output, enc_state, vocab_si
                                                           rnn_size)
     
     initial_state = dec_cell.zero_state(dtype=tf.float32, batch_size=batch_size)
-    #initial_state = tf.contrib.seq2seq.AttentionWrapperState(enc_state[0],
-    #                                                        _zero_state_tensors(rnn_size, 
-    #                                                                           batch_size, 
-    #                                                                             tf.float32)) 
-    
+
     with tf.variable_scope("decode"):
         training_logits = training_decoding_layer(dec_embed_input, 
                                                   summary_length, 
@@ -184,7 +188,6 @@ def  decoding_layer(dec_embed_input, embeddings, enc_output, enc_state, vocab_si
                                                     output_layer,
                                                     max_summary_length,
                                                     batch_size)
-
     return training_logits, inference_logits
 
 
@@ -216,7 +219,6 @@ def seq2seq_model(input_data, target_data, keep_prob, text_length, summary_lengt
                                                         keep_prob, 
                                                         batch_size,
                                                         num_layers)
-    
     return training_logits, inference_logits
 
 
@@ -229,22 +231,16 @@ def get_batches(summaries, texts, batch_size):
         start_i = batch_i * batch_size
         summaries_batch = summaries[start_i:start_i + batch_size]
         texts_batch = texts[start_i:start_i + batch_size]
-        #pad_summaries_batch = np.array(pad_sentence_batch(summaries_batch))
-        #pad_texts_batch = np.array(pad_sentence_batch(texts_batch))
-        
-        # Need the lengths for the _lengths parameters
-        pad_summaries_lengths = []
-        for summary in summaries_batch:
-            pad_summaries_lengths.append(len(summary))
-        
-        pad_texts_lengths = []
-        for text in texts_batch:
-            pad_texts_lengths.append(len(text))
 
-        yield summaries_batch, texts_batch, pad_summaries_lengths, pad_texts_lengths
+        # Need the lengths for the _lengths parameters
+        pad_summaries_lengths = np.repeat(len(summaries_batch[0]), summaries_batch.shape[0]).tolist()
+
+        pad_texts_lengths = np.repeat(len(texts_batch[0]), texts_batch.shape[0]).tolist()
+
+        yield summaries_batch, texts_batch,pad_summaries_lengths, pad_texts_lengths
 
 # Set the Hyperparameters# Set the 
-epochs = 10
+epochs = args.epochs
 batch_size = 16
 rnn_size = 128
 num_layers = 2
@@ -297,18 +293,14 @@ with train_graph.as_default():
         train_op = optimizer.apply_gradients(capped_gradients)
 print("Graph is built.")
 
-
-# In[ ]:
-
-
 # Train the Model
 learning_rate_decay = 0.95
 min_learning_rate = 0.0005
-display_step = 10 # Check training loss after every 20 batches
+display_step = 50 # Check training loss after every 20 batches
 stop_early = 0 
 stop = 3 # If the update loss does not decrease in 3 consecutive update checks, stop training
 per_epoch = 3 # Make 3 update checks per epoch
-update_check = (X_train.shape[0]//batch_size//per_epoch)-1
+update_check = (X.shape[0]//batch_size//per_epoch)-1
 
 update_loss = 0 
 batch_loss = 0
@@ -317,19 +309,19 @@ summary_update_loss = [] # Record the update losses for saving improvements in t
 config = tf.ConfigProto()
 config.gpu_options.allow_growth=True
 
-checkpoint = "./best_model.ckpt"
+checkpoint = "./abstractive_summary/best_model.ckpt"
 with tf.Session(graph=train_graph, config=config) as sess:
     sess.run(tf.global_variables_initializer())
     
     # If we want to continue training a previous session
     #loader = tf.train.import_meta_graph("./" + checkpoint + '.meta')
     #loader.restore(sess, checkpoint)
-    
+
     for epoch_i in range(1, epochs+1):
         update_loss = 0
         batch_loss = 0
         for batch_i, (summaries_batch, texts_batch, summaries_lengths, texts_lengths) in enumerate(
-                get_batches(y_train, X_train, batch_size)):
+                get_batches(Y, X, batch_size)):
             start_time = time.time()
             _, loss = sess.run(
                 [train_op, cost],
@@ -350,7 +342,7 @@ with tf.Session(graph=train_graph, config=config) as sess:
                       .format(epoch_i,
                               epochs, 
                               batch_i, 
-                              len(X_train) // batch_size,
+                              len(X) // batch_size,
                               batch_loss / display_step, 
                               batch_time*display_step))
                 batch_loss = 0
@@ -380,5 +372,3 @@ with tf.Session(graph=train_graph, config=config) as sess:
         if stop_early == stop:
             print("Stopping Training.")
             break
-
-
