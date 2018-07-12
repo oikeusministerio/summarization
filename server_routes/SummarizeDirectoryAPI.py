@@ -2,6 +2,7 @@ from flask import request
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
+import pandas as pd
 
 ALLOWED_EXTENSIONS = ['docx','txt']
 
@@ -51,26 +52,29 @@ class SummaryDirectoryAPI(MethodView):
         if len(request.files) < 1:
             return return_json(json.dumps({'success':False, 'error':'There are no file in request.'}), 404)
 
+        params = ['summary_length', 'minimum_distance', 'method']
+        for param in params:
+            if param not in request.args:
+                # body should be validated by swagger, but this works also
+                return return_json(json.dumps({'success': False, 'error': 'Please provide : ' + str(params)}), 404)
+
+        method = request.args.get('method')
+
+        try:
+            summary_length = int(request.args.get('summary_length'))
+            minimum_distance = float(request.args.get('minimum_distance'))
+        except ValueError:
+            return return_json(
+                json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}),404)
+
+        all_summaries = {}
+        filenames = []
         for file in request.files:
-            print(request.files[file])
+            f = request.files[file]
+            file_summary = self.summarizer.summary_from_file(f, method, summary_length, minimum_distance)
+            all_summaries[f.filename] = file_summary
+            filenames.append(f.filename)
 
-        # params = ['summary_length', 'minimum_distance', 'method']
-        # for param in params:
-        #     if param not in request.args:
-        #         # body should be validated by swagger, but this works also
-        #         return return_json(json.dumps({'success': False, 'error': 'Please provide : ' + str(params)}), 404)
-        #
-        # method = request.args.get('method')
-        #
-        # try:
-        #     summary_length = int(request.args.get('summary_length'))
-        #     minimum_distance = float(request.args.get('minimum_distance'))
-        # except ValueError:
-        #     return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}), 404)
-
-        # if file and allowed_file(file.filename):
-        #     summaries = self.summarizer.summary_from_file(file,method, summary_length, minimum_distance)
-        #     summaries['success'] = True
-        #     return return_json(json.dumps(summaries), 201)
-        # else:
-        #     return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[]}), 404)
+        all_summaries['success'] = True
+        all_summaries['filenames'] = filenames
+        return return_json(json.dumps(all_summaries), 201)

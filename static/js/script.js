@@ -168,10 +168,15 @@ function showSummary(text, positions, hasRanking, ranking) {
 function showMultiSectionSummary(data) {
     document.getElementById("error_output").innerHTML = ""
     htmlOutput = "<div>"
-    for (var i in data.titles) {
-        var title = data.titles[i]
-        htmlOutput += "<h3>" + title + "</h3>"
-        htmlOutput += "<p>" + data[title].summary + "</p>"
+    for (var j in data.filenames) {
+        var fn = data.filenames[j]
+        htmlOutput += "<h2> Tiedosto : " +fn+ "</h2>"
+        var file = data[fn]
+        for (var i in file.titles) {
+            var title = file.titles[i]
+            htmlOutput += "<h3>" + title + "</h3>"
+            htmlOutput += "<p>" + file[title].summary + "</p>"
+        }
     }
     htmlOutput += "</div>"
     document.getElementById("output_div").innerHTML = htmlOutput

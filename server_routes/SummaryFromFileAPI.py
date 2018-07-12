@@ -72,7 +72,10 @@ class SummaryFromFileAPI(MethodView):
 
         if file and allowed_file(file.filename):
             summaries = self.summarizer.summary_from_file(file,method, summary_length, minimum_distance)
-            summaries['success'] = True
-            return return_json(json.dumps(summaries), 201)
+            result = {}
+            result[file.filename] = summaries
+            result['filenames'] = [file.filename]
+            result['success'] = True
+            return return_json(json.dumps(result), 201)
         else:
-            return return_json(json.dumps({'success':False, 'summary':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[]}), 404)
+            return return_json(json.dumps({'success':False, 'error':"file extendsion not one of : " + str(ALLOWED_EXTENSIONS), 'positions':[]}), 404)
