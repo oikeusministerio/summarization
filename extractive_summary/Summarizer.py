@@ -1,5 +1,4 @@
 
-import numpy as np
 import pandas as pd
 
 from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
@@ -9,12 +8,12 @@ from tools.exceptions import SummarySizeTooSmall
 
 from dask import delayed, compute
 
-def summarization_job(summarizer, parsed_document, method, summary_length, minimum_distance, title):
+def summarization_job(summarizer, parsed_document, method, summary_length, title):
     """
     Wrapper to catch exceptions.
     """
     try:
-        s, p = summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
+        s, p = summarizer.summarize(parsed_document[title], method, summary_length)
         return (title, s, p)
     except SummarySizeTooSmall as e:
         print("with title " + str(title) + ", " + str(e))
@@ -28,8 +27,8 @@ class ParallelSummary:
     def __init__(self, summarizer):
         self.summarizer = summarizer
 
-    def summarize(self, parsed_document, original_titles, method, summary_length, minimum_distance):
-        summarize_one = lambda title : summarization_job(self.summarizer, parsed_document, method, summary_length, minimum_distance, title)
+    def summarize(self, parsed_document, original_titles, method, summary_length):
+        summarize_one = lambda title : summarization_job(self.summarizer, parsed_document, method, summary_length, title)
 
         results = compute([delayed(summarize_one)(t) for t in original_titles]) # Dask delayed and computed
         results = pd.DataFrame(results[0],columns=['title', 'summary', 'position'])
@@ -57,7 +56,7 @@ class Summarizer:
         return " ".join(sentences), [int(p) for p in positions], words, neighbors
 
 
-    def summary_from_file(self, file, method, summary_length, minimum_distance):
+    def summary_from_file(self, file, method, summary_length):
         parser = DocumentParser(file)
         if '.docx' in file.filename:
             parsed_document, titles = parser.parse_docx()
@@ -68,7 +67,7 @@ class Summarizer:
 
         summarizer = self
         ms = ParallelSummary(summarizer)
-        summaries = ms.summarize(parsed_document, titles,method,summary_length, minimum_distance)
+        summaries = ms.summarize(parsed_document, titles,method,summary_length)
         summaries['success'] = True
         summaries['titles'] = titles
         return summaries

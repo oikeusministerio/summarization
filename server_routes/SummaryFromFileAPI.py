@@ -39,11 +39,10 @@ class SummaryFromFileAPI(MethodView):
             type: int
             required: true
             description: maximum number of characters to use in summary
-          - in: path
-            name: minimum_distance
-            type: float
+          - in: return_type
+            type: string
             required: true
-            description: wminimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
+            description: return summary in either json, html or png. Html and png will be formatted.
 
           201:
             description: Summary created
@@ -56,7 +55,7 @@ class SummaryFromFileAPI(MethodView):
         if file.filename == '':
             return return_json(json.dumps({'success': False, 'error': 'No file selected : filename is empty.'}), 404)
 
-        params = ['summary_length', 'minimum_distance', 'method']
+        params = ['summary_length', 'method', 'return_type']
         for param in params:
             if param not in request.args:
                 # body should be validated by swagger, but this works also
@@ -66,12 +65,11 @@ class SummaryFromFileAPI(MethodView):
 
         try:
             summary_length = int(request.args.get('summary_length'))
-            minimum_distance = float(request.args.get('minimum_distance'))
         except ValueError:
             return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}), 404)
 
         if file and allowed_file(file.filename):
-            summaries = self.summarizer.summary_from_file(file,method, summary_length, minimum_distance)
+            summaries = self.summarizer.summary_from_file(file,method, summary_length)
             result = {}
             result[file.filename] = summaries
             result['filenames'] = [file.filename]

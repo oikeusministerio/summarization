@@ -10,5 +10,5 @@ def create_configured_summarizer():
         config = json.load(f)
         return Summarizer(config)
 
-def return_json(dumepd_json, code):
-    return dumepd_json, code, {'ContentType': 'application/json'}
+def return_json(dumped_json, code):
+    return dumped_json, code, {'ContentType': 'application/json'}

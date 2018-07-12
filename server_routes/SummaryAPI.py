@@ -31,9 +31,6 @@ class SummaryAPI(MethodView):
                 summary_length:
                   type: int
                   description: maximum number of characters to use in summary
-                minimum_distance:
-                  type: float
-                  description: minimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
                 method:
                   type: string
                   description: what method is used to create summary
@@ -43,7 +40,7 @@ class SummaryAPI(MethodView):
           201:
             description: Summary created
         """
-        params = ['content','summary_length','minimum_distance','method','return_justification']
+        params = ['content','summary_length','method','return_justification']
         for param in params:
             if param not in request.json:
                 # body should be validated by swagger, but this works also
@@ -51,7 +48,6 @@ class SummaryAPI(MethodView):
 
         try:
             length = int(request.json['summary_length'])
-            threshold = float(request.json['minimum_distance'])
         except ValueError:
             return return_json(json.dumps({'success': False, 'error': 'Summary length should be integer'}), 404)
 
@@ -67,7 +63,7 @@ class SummaryAPI(MethodView):
                         {'success': True, 'summary': summary, 'positions': positions, 'words':words, 'neighbors':neighbors}
                     ), 201)
 
-            summary, positions = self.summarizer.summarize(text, method, length, threshold=threshold)
+            summary, positions = self.summarizer.summarize(text, method, length)
             return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
         except TextTooLong as e:
             return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method'+str(e)+'Please try other one.'}), 404)

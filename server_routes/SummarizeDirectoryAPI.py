@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, render_template
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
@@ -39,11 +39,10 @@ class SummaryDirectoryAPI(MethodView):
             type: int
             required: true
             description: maximum number of characters to use in summary
-          - in: path
-            name: minimum_distance
-            type: float
+          - in: return_type
+            type: string
             required: true
-            description: wminimum distance between two sentences. 0.1 seems to be best. Used only with graph based method.
+            description: return summary in either json, html or png. Html and png will be formatted.
 
           201:
             description: Summary created
@@ -52,7 +51,7 @@ class SummaryDirectoryAPI(MethodView):
         if len(request.files) < 1:
             return return_json(json.dumps({'success':False, 'error':'There are no file in request.'}), 404)
 
-        params = ['summary_length', 'minimum_distance', 'method']
+        params = ['summary_length', 'method', 'return_type']
         for param in params:
             if param not in request.args:
                 # body should be validated by swagger, but this works also
@@ -62,7 +61,6 @@ class SummaryDirectoryAPI(MethodView):
 
         try:
             summary_length = int(request.args.get('summary_length'))
-            minimum_distance = float(request.args.get('minimum_distance'))
         except ValueError:
             return return_json(
                 json.dumps({'success': False, 'error': 'Summary length should be integer amd minimum_distance float'}),404)
@@ -71,10 +69,22 @@ class SummaryDirectoryAPI(MethodView):
         filenames = []
         for file in request.files:
             f = request.files[file]
-            file_summary = self.summarizer.summary_from_file(f, method, summary_length, minimum_distance)
+            file_summary = self.summarizer.summary_from_file(f, method, summary_length)
             all_summaries[f.filename] = file_summary
             filenames.append(f.filename)
 
         all_summaries['success'] = True
         all_summaries['filenames'] = filenames
-        return return_json(json.dumps(all_summaries), 201)
+
+        return_type = request.args.get('return_type')
+        print(return_type)
+        if return_type == 'json':
+            return return_json(json.dumps(all_summaries), 201)
+        elif return_type == 'html':
+            return render_template('multi_file_summary.html', data=all_summaries)
+        elif return_type == 'png':
+            html = render_template('multi_file_summary.html', data=all_summaries)
+            # convert to png
+            return html
+        else:
+            raise ValueError('Given return type ' + str(return_type) + ' unknown. Please give either json, html or png.')
