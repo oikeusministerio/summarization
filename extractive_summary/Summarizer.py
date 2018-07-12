@@ -7,12 +7,11 @@ from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSum
 from extractive_summary.DocumentParser import DocumentParser
 from tools.exceptions import SummarySizeTooSmall
 
-from multiprocessing.dummy import Pool as ThreadPool
-import itertools
+from dask import delayed, compute
 
-def summarization_job_tpt(summarizer, parsed_document, method, summary_length, minimum_distance, title):
+def summarization_job(summarizer, parsed_document, method, summary_length, minimum_distance, title):
     """
-    tpt = thread per title
+    Wrapper to catch exceptions.
     """
     try:
         s, p = summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
@@ -21,68 +20,25 @@ def summarization_job_tpt(summarizer, parsed_document, method, summary_length, m
         print("with title " + str(title) + ", " + str(e))
         return(title, '', [])
 
-
-def summarization_job_ss(summarizer, parsed_document, method, summary_length, minimum_distance, titles):
+class ParallelSummary:
     """
-    ss = split sequential
-    """
-    results = []
-    for title in titles:
-        try:
-            s,p = summarizer.summarize(parsed_document[title], method, summary_length, minimum_distance)
-            results.append((title, s, p))
-        except SummarySizeTooSmall as e:
-            print("with title " + str(title) + ", " + str(e))
-            return (title, '', [])
-    return results
-
-class MultithreadSummary:
-    """
-    Two modes: start new thread for each title (thread_per_title) or create few sequential ones (split_sequential).
-    https://medium.com/idealo-tech-blog/parallelisation-in-python-an-alternative-approach-b2749b49a1e
-
+    Paralleziation by Dask
     """
 
-    thread_count = 5
-
-    def __init__(self, summarizer, mode="split_sequantial"):
-        self.pool = ThreadPool(MultithreadSummary.thread_count)
+    def __init__(self, summarizer):
         self.summarizer = summarizer
-        self.mode = mode
 
     def summarize(self, parsed_document, original_titles, method, summary_length, minimum_distance):
-        if self.mode == "split_sequantial":
-            titles = np.array_split(np.array(original_titles), MultithreadSummary.thread_count)
-        else:
-            titles = original_titles
+        summarize_one = lambda title : summarization_job(self.summarizer, parsed_document, method, summary_length, minimum_distance, title)
 
-        params = zip(itertools.repeat(self.summarizer), \
-                     itertools.repeat(parsed_document), \
-                     itertools.repeat(method), \
-                     itertools.repeat(summary_length), \
-                     itertools.repeat(minimum_distance), \
-                     titles) # this is only non constant for summarization_job
-
-        if self.mode == "split_sequantial":
-            result_lists = self.pool.starmap(summarization_job_ss, params)
-            results = []
-            for res_list in result_lists:
-                for res in res_list:
-                    results.append(res)
-        else:
-            results = self.pool.starmap(summarization_job_tpt, params)
-
-        results = pd.DataFrame(results,columns=['title', 'summary', 'position'])
+        results = compute([delayed(summarize_one)(t) for t in original_titles]) # Dask delayed and computed
+        results = pd.DataFrame(results[0],columns=['title', 'summary', 'position'])
         summaries = {}
         for i in range(results.shape[0]):
             title,summary, positions = results.iloc[i]
             summaries[title] = {'summary': summary, 'positions': positions}
 
         return summaries
-
-    def close(self):
-        self.pool.close()
-        self.pool.join()
 
 class Summarizer:
 
@@ -111,7 +67,7 @@ class Summarizer:
             raise ValueError('File extension not supported.')
 
         summarizer = self
-        ms = MultithreadSummary(summarizer)
+        ms = ParallelSummary(summarizer)
         summaries = ms.summarize(parsed_document, titles,method,summary_length, minimum_distance)
         summaries['success'] = True
         summaries['titles'] = titles

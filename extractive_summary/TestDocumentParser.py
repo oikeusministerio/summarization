@@ -43,15 +43,6 @@ class TestDocumentParser(unittest.TestCase):
                     section = parsed[t]
                     self.assertLessEqual(section_min_length, len(section))
 
-    def test_parse_small_text(self):
-        dirname, _ = os.path.split(os.path.abspath(__file__))
-        filename = 'small_text.txt'
-        with open(dirname + '/test_files/' + filename, 'rb') as f:
-            parser = DocumentParser(f)
-            self.assertRaises(AssertionError, parser.parse_txt)
-        f.close()
-
-
     def test_cumsums(self):
         sections = ["First section. Two sentences.", "Second section with three sents. One more. One more time.",
                     "Last but not least. Four sents. Jee. Jee jee."]
