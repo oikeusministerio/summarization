@@ -83,7 +83,7 @@ class SummaryDirectoryAPI(MethodView):
         elif return_type == 'html':
             return render_template('multi_file_summary.html', data=all_summaries)
         elif return_type == 'png':
-            html = render_template('multi_file_summary.html', data=all_summaries)
+            html = render_template('base.html', data=all_summaries)
             # convert to png
             return html
         else:

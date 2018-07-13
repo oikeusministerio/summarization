@@ -4,6 +4,7 @@
 }
 #app_form {
   display: inline-block;
+  width: 100%;
 }
 
 #text_input {
@@ -52,4 +53,27 @@ textarea, #copy_paste_input {
 
 table, th, td {
    border: 1px solid black;
+}
+
+.file {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 5px;
+    border: 1px solid;
+}
+
+.left_column {
+    flex: 0 0 20%;
+    min-width: 20%;
+    word-wrap: break-word;
+}
+
+.right_column {
+    width: 60%;
 }

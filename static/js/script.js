@@ -129,7 +129,7 @@ function send(e) {
     } else if(textOrFile == "directory_input") {
         var summaryLength = document.getElementById("dir_summary_length").value
         var files = document.getElementById("multiple_files").files
-        sendDirectory(files, method, summaryLength, "html") //json
+        sendDirectory(files, method, summaryLength, "png") //json
     } else {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"

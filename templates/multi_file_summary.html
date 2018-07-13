@@ -1,0 +1,18 @@
+<div id="summary">
+  {% for fn in data.filenames %}
+    <div class="file">
+        <div class="column left_column">
+            <h1>{{ fn }}</h1>
+        </div>
+        <div class="column right_column">
+          {% for title in data[fn].titles %}
+            <h2>{{ title }}</h2>
+            <p>{{ data[fn][title].summary }}</p>
+          {% endfor %}
+        </div>
+        <div class="column">
+            <h3> Henkilöt </h3>
+        </div>
+      </div>
+    {% endfor %}
+</div>
