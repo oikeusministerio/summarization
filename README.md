@@ -1,6 +1,17 @@
 # summarization
 Automated summarization of legal texts
 
+## Installation
+Most of the requirements are listed in requirements.txt and can be installed by
+```
+python3 -m pip install --user -r requirements.txt
+```
+or with Anaconda (not tested).
+Also following binary-packages should be installed :
+```
+sudo apt-get install wkhtmltopdf
+```
+
 ## judgements
 
 ```

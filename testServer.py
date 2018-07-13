@@ -13,7 +13,7 @@ from server import get_app
 def post_text(client, text,summary_length,method):
     response = client.post('/summarize',
                             data=json.dumps(
-                                {"content": text, "summary_length": summary_length, "minimum_distance": 0.1,
+                                {"content": text, "summary_length": summary_length,
                                  "method": method, 'return_justification': True}),
                             content_type='application/json')
     return json.loads(response.data.decode('utf8'))
@@ -25,7 +25,6 @@ def post_file(client, filename, summary_length, method):
             file=(BytesIO(text), filename),
         )
     response = client.post('/summarize/file?summary_length=' + str(summary_length) \
-                                + '&minimum_distance=0.1' \
                                 + '&method=' + method, data=data, content_type='multipart/form-data')
     return json.loads(response.data.decode('utf8'))
 

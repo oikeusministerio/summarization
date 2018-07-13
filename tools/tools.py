@@ -57,7 +57,7 @@ def word_is_valid(word):
     :param word:
     :return: false if word is not useful
     """
-    if len(word) < 1:
+    if len(word) < 2:
         return False
     if has_numbers(word):
         return False
