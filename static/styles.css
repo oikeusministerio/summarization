@@ -56,21 +56,26 @@ table, th, td {
 }
 
 .file {
+    display: -webkit-box; /* wkhtmltopdf uses this one */
+    display: -webkit-flex;
     display: flex;
-    flex-wrap: wrap;
 }
 
 .column {
+    display: -webkit-box; /* wkhtmltopdf uses this one */
+    display: -webkit-flex;
     display: flex;
+
+    -webkit-flex-direction: column;
     flex-direction: column;
-    flex-grow: 1;
+
     padding: 5px;
     border: 1px solid;
 }
 
 .left_column {
-    flex: 0 0 20%;
-    min-width: 20%;
+    //flex: 0 0 20%;
+    width: 20%;
     word-wrap: break-word;
 }
 
