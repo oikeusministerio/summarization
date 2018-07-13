@@ -66,6 +66,7 @@
                          </div>
                      </div>
                  </div>
+                 <!--
                  <div id="return_justification">
                     <p>
                       Tuotetaanko samalla perustelu :
@@ -74,7 +75,16 @@
                           <input type="radio" name="return_justification" value="False" id="false"> <label for="false"> Ei </label><br>
                       </div>
                      </p><br>
+                 </div>  -->
+                 <div>
+                     <p>Luo tiivistelmä tiedostomuodossa : </p>
+                     <select id="returnType">
+                      <option value="html">HTML</option>
+                      <option value="png">PNG</option>
+                      <option value="json">JSON</option>
+                    </select>
                  </div>
+                 <br>
                  <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
             </form>
             <div id="in_progress"></div>

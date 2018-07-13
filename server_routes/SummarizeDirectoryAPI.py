@@ -1,8 +1,11 @@
-from flask import request, render_template
+from flask import request, render_template, send_file, make_response
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
-import pandas as pd
+import imgkit
+import tempfile
+import io
+import base64
 
 ALLOWED_EXTENSIONS = ['docx','txt']
 
@@ -84,7 +87,14 @@ class SummaryDirectoryAPI(MethodView):
             return render_template('multi_file_summary.html', data=all_summaries)
         elif return_type == 'png':
             html = render_template('base.html', data=all_summaries)
-            # convert to png
-            return html
+            with tempfile.NamedTemporaryFile(suffix='.png') as t:
+                imgkit.from_string(html, t.name, css='static/styles.css')
+                with open(t.name, 'rb') as image_binary:
+                    image = base64.b64encode(image_binary.read())
+                    response = make_response(image)
+                    response.headers.set('Content-Type', 'image/png')
+                    response.headers.set(
+                        'Content-Disposition', 'attachment', filename='summary.png')
+                    return response
         else:
             raise ValueError('Given return type ' + str(return_type) + ' unknown. Please give either json, html or png.')

@@ -100,13 +100,17 @@ function sendDirectory(files, method,summaryLength, returnType) {
             } else {
                 showError(data.error)
             }
-        } else {
+        } else if (returnType == 'html'){
             // THIS IS REALLY UGLY WAY TO HANDLE
             // SHOULD BE HANDLED BY
             // Content-Type: Accept: text/plain or json or html
             // INSTEAD OF LOGIC IN CODE
             document.getElementById("error_output").innerHTML = ""
             document.getElementById("output_div").innerHTML = this.responseText
+        } else {
+            //debugger;
+            document.getElementById("error_output").innerHTML = ""
+            document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
         }
     };
     xhr.send(fd);
@@ -121,7 +125,9 @@ function send(e) {
     document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
     var method = document.querySelector('input[name="method"]:checked').value;
 
-    var returnJustification = document.querySelector('input[name="return_justification"]:checked').value;
+    var returnJustification = "True";//document.querySelector('input[name="return_justification"]:checked').value;
+    var returnTypeSelector = document.getElementById("returnType")
+    var returnType = returnTypeSelector.options[returnTypeSelector.selectedIndex].value
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "copy_paste_input") {
@@ -129,7 +135,7 @@ function send(e) {
     } else if(textOrFile == "directory_input") {
         var summaryLength = document.getElementById("dir_summary_length").value
         var files = document.getElementById("multiple_files").files
-        sendDirectory(files, method, summaryLength, "png") //json
+        sendDirectory(files, method, summaryLength, returnType) //json
     } else {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"
@@ -205,25 +211,25 @@ function toggleTextInputField(e) {
         document.getElementById("docx_file_upload_input").style.display = "block";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
-        document.getElementById("return_justification").style.display = "none";
+       // document.getElementById("return_justification").style.display = "none";
     } else if (e.value == "txt_file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "block";
         document.getElementById("directory_input").style.display = "none";
-        document.getElementById("return_justification").style.display = "none";
+       // document.getElementById("return_justification").style.display = "none";
     } else if (e.value == "copy_paste_input") {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
-        document.getElementById("return_justification").style.display = "block";
+        //document.getElementById("return_justification").style.display = "block";
     } else {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "block";
-        document.getElementById("return_justification").style.display = "none";
+        //document.getElementById("return_justification").style.display = "none";
     }
 }
 
