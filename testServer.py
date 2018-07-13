@@ -7,6 +7,8 @@ from io import BytesIO
 from urllib import parse
 from tools.tools import load_data
 import timeout_decorator
+import imghdr
+import tempfile
 
 from server import get_app
 
@@ -18,14 +20,28 @@ def post_text(client, text,summary_length,method):
                             content_type='application/json')
     return json.loads(response.data.decode('utf8'))
 
-def post_file(client, filename, summary_length, method):
+def post_file(client, filename, summary_length, method, return_type):
     with open("extractive_summary/test_files/" + filename, 'rb') as f:
         text = f.read()
         data = dict(
             file=(BytesIO(text), filename),
         )
     response = client.post('/summarize/file?summary_length=' + str(summary_length) \
-                                + '&method=' + method, data=data, content_type='multipart/form-data')
+                                + '&method=' + method
+                                + '&return_type=' + return_type, data=data, content_type='multipart/form-data')
+    return json.loads(response.data.decode('utf8'))
+
+def post_multiple_files(client, filenames, summary_length, method, return_type):
+    data = dict()
+    for i, filename in enumerate(filenames):
+        with open("extractive_summary/test_files/" + filename, 'rb') as f:
+            text = f.read()
+            data['file-'+str(i)]=(BytesIO(text), filename)
+    response = client.post('/summarize/directory?summary_length=' + str(summary_length) \
+                                + '&method=' + method
+                                + '&return_type=' + return_type, data=data, content_type='multipart/form-data')
+    if return_type == 'png':
+        return response.data
     return json.loads(response.data.decode('utf8'))
 
 class TestServer(TestCase):
@@ -60,7 +76,7 @@ class TestServer(TestCase):
         self.assertTrue(first_word in summary)
 
     def test_summarization_with_docx(self):
-        summary_lengths = [100,200,500]
+        summary_lengths = [50,100,200]
         methods = ["embedding","graph"]
         filenames = ["testi.docx", "testi3.docx"]
         for summary_length in summary_lengths:
@@ -69,17 +85,20 @@ class TestServer(TestCase):
                     print(summary_length)
                     print(method)
                     print(filename)
-                    response_json = post_file(self.client, filename, summary_length, method)
+                    response_json = post_file(self.client, filename, summary_length, method, 'json')
                     self.assertTrue(response_json['success'])
-                    self.assertTrue('titles' in response_json )
-                    for title in response_json['titles']:
-                        summary = response_json[title]['summary']
-                        if len(summary) > 0:
-                            first_word = summary.split(' ')[0]
-                            self.assertTrue(first_word in summary)
+                    self.assertTrue('filenames' in response_json )
+                    for fn in response_json['filenames']:
+                        file_summary = response_json[fn]
+                        self.assertTrue('titles' in file_summary)
+                        for title in file_summary['titles']:
+                            summary = file_summary[title]['summary']
+                            if len(summary) > 0:
+                                first_word = summary.split(' ')[0]
+                                self.assertTrue(first_word in summary)
 
     def test_summarization_with_txt(self):
-        summary_lengths = [100,200,500]
+        summary_lengths = [50, 100,200]
         methods = ["embedding","graph"]
         filenames = ["normal_text.txt"]
         for summary_length in summary_lengths:
@@ -88,20 +107,34 @@ class TestServer(TestCase):
                     print(summary_length)
                     print(method)
                     print(filename)
-                    response_json = post_file(self.client, filename, summary_length, method)
+                    response_json = post_file(self.client, filename, summary_length, method, 'json')
                     self.assertTrue(response_json['success'])
-                    self.assertTrue('titles' in response_json )
-                    for title in response_json['titles']:
-                        summary = response_json[title]['summary']
-                        if len(summary) > 0:
-                            first_sentence = summary.split('.')[0]
-                            self.assertTrue(first_sentence in summary)
-    #
-    # def test_visualisation(self):
-    #     response = self.client.get('/visualize/embeddings?words=' + parse.quote(str([1,2,3,4]), safe='~()*!.\'') + \
-    #                                '&neighbors=' + parse.quote(str([1,2,3,4]), safe='~() *!.\''))
-    #
-    #     self.assertIsNotNone(response.data)
+                    self.assertTrue('filenames' in response_json)
+                    for fn in response_json['filenames']:
+                        file_summary = response_json[fn]
+                        self.assertTrue('titles' in file_summary)
+                        for title in file_summary['titles']:
+                            summary = file_summary[title]['summary']
+                            if len(summary) > 0:
+                                first_word = summary.split(' ')[0]
+                                self.assertTrue(first_word in summary)
+
+    def test_multifile_summarization_json(self):
+        filesnames = ['normal_text.txt', 'average_sized_text.txt']
+        response_json = post_multiple_files(self.client, filesnames, 15, 'graph', 'json')
+        for fn in response_json['filenames']:
+            file_summary = response_json[fn]
+            self.assertTrue('titles' in file_summary)
+            for title in file_summary['titles']:
+                summary = file_summary[title]['summary']
+                if len(summary) > 0:
+                    first_word = summary.split(' ')[0]
+                    self.assertTrue(first_word in summary)
+
+    def test_multifile_summarization_png(self):
+        filesnames = ['normal_text.txt', 'average_sized_text.txt']
+        response = post_multiple_files(self.client, filesnames, 15, 'graph', 'png')
+        self.assertLess(1000, len(response)) # testing that not None and has something inside
 
 if __name__ == '__main__':
     unittest.main()
