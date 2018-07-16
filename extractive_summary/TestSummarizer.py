@@ -8,7 +8,7 @@ import time
 import json
 
 def create_configured_summarizer():
-    with open('extractive_summary/config.json', 'r') as f:
+    with open('config.json', 'r') as f:
         config = json.load(f)
         return Summarizer(config)
 
@@ -22,7 +22,7 @@ class TestSummarizer(unittest.TestCase):
         summarizer = Summarizer({"dictionary_file":None})
         summarizer.summarize = MagicMock(return_value=fake_summary)
         ms = ParallelSummary(summarizer)
-        summaries = ms.summarize(fake_parsed_document, fake_titles, None, 10, 0.1)
+        summaries = ms.summarize(fake_parsed_document, fake_titles, None, 10)
         for key in summaries.keys():
             self.assertTrue(summaries[key]['summary'] == fake_summary[0])
 
@@ -32,7 +32,7 @@ class TestSummarizer(unittest.TestCase):
         with open('extractive_summary/test_files/big_text.txt', 'rb') as file:
             file.filename = 'big_text.txt'
             summarizer = create_configured_summarizer()
-            summaries = summarizer.summary_from_file(file, "embed", 15,0.1)
+            summaries = summarizer.summary_from_file(file, "embed", 15)
 
         tock = time.time()
 

@@ -12,31 +12,48 @@ Also following binary-packages should be installed :
 sudo apt-get install wkhtmltopdf
 ```
 
-## judgements
+Install also [Finnish-dep-parser](http://turkunlp.github.io/Finnish-dep-parser/) that will be run on own process.
+Let's run it inside Docker so please install Docker first.
+Then download image (https://github.com/samisalkosuo/finnish-dep-parser-docker)
+by executing:
+```
+docker pull kazhar/finnish-dep-parser
+```
 
+
+## Judgments
+
+Fetch judgments and store them locally for learning tasks(embeddings or abstractive).
 ```
 cd judgements
-./run_script.sh
+python3 fetch.py N
 ```
+Where N is number of judgments to fetch (07/2018 there was only about 6200 available).
 
-## summaries
+## Summaries
 
 #### Start server:
+
+Start dependency parser
+```bash
+docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
 ```
-cd extractive_summary
-./run_script.sh
+If you want to use other address than 0.0.0.0:9876, please modify the new port to config.json.
+Then start server.
+```
+python3 server.py
 ```
 
 when server running, post a text to summarize: 
 ```
-curl --header "Content-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":30, "minimum_distance":0.1, "method":"embedding"}' http://localhost:5000/summarize
+curl --h-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":10, "method":"embedding", "return_justification":"False"}' http://localhost:5000/summarize
 ```
 
 or visit http:localhost:5000 with browser.
 
 To send text file for summarization, use
 ```
-curl -v -F file=@testi.docx http://localhost:5000/summarize/file
+curl -v -F file=@testi.docx 'http://localhost:5000/summarize/file?summary_length=10&method=graph&return_type=json'
 ```
 
 #### Run tests

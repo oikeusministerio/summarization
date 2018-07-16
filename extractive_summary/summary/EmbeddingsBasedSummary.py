@@ -31,7 +31,7 @@ class EmbeddingsBasedSummary:
         # when searching argmax, indexes with this value are not selected
         # becouse it is so big
         self.max_distance = -10000000
-        with open('extractive_summary/config.json', 'r') as f:
+        with open('config.json', 'r') as f:
             config = json.load(f)
             self.embeddings_file = config["embeddings_file"]
             self.embeddings = np.load(self.embeddings_file)
