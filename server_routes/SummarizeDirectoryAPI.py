@@ -1,10 +1,9 @@
-from flask import request, render_template, send_file, make_response
+from flask import request, render_template, make_response
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
 import imgkit
 import tempfile
-import io
 import base64
 
 ALLOWED_EXTENSIONS = ['docx','txt']
@@ -97,4 +96,4 @@ class SummaryDirectoryAPI(MethodView):
                         'Content-Disposition', 'attachment', filename='summary.png')
                     return response
         else:
-            raise ValueError('Given return type ' + str(return_type) + ' unknown. Please give either json, html or png.')
+            raise ValueError('Given return type ' + str(return_type) + ' unknown. Please choose either json, html or png.')

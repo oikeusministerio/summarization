@@ -31,11 +31,12 @@ class NameExtractor:
         with open('config.json', 'r') as f:
             config = json.load(f)
             self.dependency_parser_url = config['dependency_parser_url'] # "http://127.0.0.1:9876"
-        self.special_char_mask = re.compile('.*[;:\.]$')
+        self.ending_special_char = re.compile('.*[;:\.]$')
+        self.contains_special_char = re.compile('.*[;:\.].*')
         self.number_mask = re.compile('.*\d.*')
 
     def is_clean(self,word):
-        return not self.special_char_mask.match(word) and not self.number_mask.match(word)
+        return not self.number_mask.match(word)
 
     def extract_names(self, parsed_document, titles):
         names = []
@@ -50,19 +51,17 @@ class NameExtractor:
             data.reset_index(level=['s','i'], inplace=True)
 
             ner = []
-            was_propn = False
             for i in range(data.shape[0]):
                 word = data.iloc[i].w
                 lemma = data.iloc[i].l
                 role = data.iloc[i].x
                 if role == 'PROPN' and self.is_clean(word):
                     to_add = lemma if lemma.istitle() else word
+                    if self.ending_special_char.match(to_add):
+                        to_add = to_add[:-1]
+                    to_add = self.contains_special_char.split(to_add)[0] # take only beginning
                     ner.append(to_add)
-                    was_propn = True
                     continue;
-                #if was_propn and role == 'NOUN':
-                    #ner.append(lemma)
-                was_propn = False;
                 if len(ner) > 0:
                     names.append(' '.join(ner))
                     ner = []

@@ -20,6 +20,11 @@ by executing:
 docker pull kazhar/finnish-dep-parser
 ```
 
+For graph visualisations, please install Graphviz
+```bash
+sudo apt install python-pydot python-pydot-ng graphviz
+```
+
 
 ## Judgments
 

@@ -33,54 +33,24 @@ function sendText(method,returnJustification) {
     }
 }
 
-function sendFile(files, method,summaryLength, returnJustification) {
-    if (files.length < 1) {
-        showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
-        document.getElementById("submit_button").disabled = false;
-        return;
-    }
-    var file = files[0]
-    var fd = new FormData();
-    fd.append("file", file);
-
-    var xhr = new XMLHttpRequest();
-    var path =  server_base_path + "/summarize/file?summary_length="+summaryLength
-                                    + "&method=" +method + "&return_type=json"
-    xhr.open('POST', path, true);
-
-    xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-          var percentComplete = (e.loaded / e.total) * 100;
-          console.log(percentComplete + '% uploaded');
-        }
-    };
-    xhr.onload = function() {
-        document.getElementById("in_progress").innerHTML = ""
-        document.getElementById("submit_button").disabled = false;
-        var data = JSON.parse(this.responseText);
-        if(data.success) {
-            showMultiSectionSummary(data);
-        } else {
-            showError(data.error)
-        }
-    };
-    xhr.send(fd);
-}
-
-function sendDirectory(files, method,summaryLength, returnType) {
+function sendFiles(path, files, method,summaryLength, returnType) {
     if (files.length < 1) {
         showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
         document.getElementById("submit_button").disabled = false;
         return;
     }
     var fd = new FormData();
-    for (var i = 0; i < files.length; i++) {
-        var file = files[i]
-        fd.append("file-"+i, file);
+    if (files.length > 1) {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i]
+            fd.append("file-"+i, file);
+        }
+    } else {
+        fd.append("file", files[0]);
     }
 
     var xhr = new XMLHttpRequest();
-    var path =  server_base_path + "/summarize/directory?summary_length="+summaryLength
+    var path =  server_base_path + path + "?summary_length="+summaryLength
                                     + "&method=" +method + "&return_type="+returnType
     xhr.open('POST', path, true);
 
@@ -93,24 +63,25 @@ function sendDirectory(files, method,summaryLength, returnType) {
     xhr.onload = function() {
         document.getElementById("in_progress").innerHTML = ""
         document.getElementById("submit_button").disabled = false;
-        if (returnType == 'json') {
-            var data = JSON.parse(this.responseText);
-            if(data.success) {
+        if(this.status == 200 || this.status == 201) {
+            if (returnType == 'json') {
+                var data = JSON.parse(this.responseText);
                 showMultiSectionSummary(data);
+            } else if (returnType == 'html'){
+                // THIS IS REALLY UGLY WAY TO HANDLE THIS.
+                // SHOULD BE HANDLED BY
+                // Content-Type: Accept: text/plain or json or html
+                // INSTEAD OF LOGIC IN CODE
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = this.responseText
             } else {
-                showError(data.error)
+                //debugger;
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
             }
-        } else if (returnType == 'html'){
-            // THIS IS REALLY UGLY WAY TO HANDLE
-            // SHOULD BE HANDLED BY
-            // Content-Type: Accept: text/plain or json or html
-            // INSTEAD OF LOGIC IN CODE
-            document.getElementById("error_output").innerHTML = ""
-            document.getElementById("output_div").innerHTML = this.responseText
         } else {
-            //debugger;
-            document.getElementById("error_output").innerHTML = ""
-            document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
+            var data = JSON.parse(this.responseText);
+            showError(data.error)
         }
     };
     xhr.send(fd);
@@ -135,7 +106,7 @@ function send(e) {
     } else if(textOrFile == "directory_input") {
         var summaryLength = document.getElementById("dir_summary_length").value
         var files = document.getElementById("multiple_files").files
-        sendDirectory(files, method, summaryLength, returnType) //json
+        sendFiles('/summarize/directory',files, method, summaryLength, returnType) //json
     } else {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"
@@ -146,7 +117,7 @@ function send(e) {
             showError("Anna tiedosto tai syötä teksti.");
             document.getElementById("submit_button").disabled = false;
         } else {
-            sendFile(files, method,summaryLength,returnJustification)
+            sendFiles('/summarize/file',files, method,summaryLength,returnType)
         }
     }
 }

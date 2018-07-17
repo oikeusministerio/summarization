@@ -124,6 +124,7 @@ class TestServer(TestCase):
         response_json = post_multiple_files(self.client, filesnames, 15, 'graph', 'json')
         for fn in response_json['filenames']:
             file_summary = response_json[fn]
+            self.assertTrue('extracted_names' in file_summary)
             self.assertTrue('titles' in file_summary)
             for title in file_summary['titles']:
                 summary = file_summary[title]['summary']

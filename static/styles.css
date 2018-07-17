@@ -78,6 +78,10 @@ table, th, td {
     word-wrap: break-word;
 }
 
-.right_column {
+.middle_column {
     width: 60%;
+}
+
+.right_column {
+    width: 20%;
 }
