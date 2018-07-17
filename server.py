@@ -12,6 +12,7 @@ from server_routes.SummaryAPI import SummaryAPI
 from server_routes.SummaryFromFileAPI import SummaryFromFileAPI
 from server_routes.VisualisationEmbeddingAPI import VisualisationEmbeddingAPI
 from server_routes.SummarizeDirectoryAPI import SummaryDirectoryAPI
+from server_routes.NamedEntityAPI import NamedEntityAPI
 
 app = Flask(__name__, static_url_path='')
 
@@ -23,10 +24,14 @@ file_summary_view = SummaryFromFileAPI.as_view("summaries from file")
 directory_view = SummaryDirectoryAPI.as_view("summarize directory")
 visualisation_view = VisualisationEmbeddingAPI.as_view("visualisation")
 
+named_entity_view = NamedEntityAPI.as_view("named entities")
+
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])
 app.add_url_rule('/summarize/file', view_func=file_summary_view, methods=["POST"])
 app.add_url_rule('/summarize/directory', view_func=directory_view, methods=["POST"])
 app.add_url_rule('/visualize/embeddings', view_func=visualisation_view, methods=["GET"])
+
+app.add_url_rule('/entities', view_func=named_entity_view, methods=["POST"])
 
 @app.route('/js/<path:path>')
 def send_js(path):

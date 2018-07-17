@@ -10,7 +10,7 @@ import ast
 class VisualisationEmbeddingAPI(MethodView):
 
     def __init__(self):
-        with open('extractive_summary/config.json', 'r') as f:
+        with open('config.json', 'r') as f:
             config = json.load(f)
             self.embeddings = np.load(config['embeddings_file'])
             dictionary = np.load(config['dictionary_file']).item()

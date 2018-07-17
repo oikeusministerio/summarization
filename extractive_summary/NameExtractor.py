@@ -1,13 +1,10 @@
 
 import json
-import io
 import requests
-from sklearn.feature_extraction.text import CountVectorizer
-from collections import Counter
 from tools.conll_to_df import conll_df
-import pandas as pd
 import numpy as np
 import re
+from graphviz import Digraph
 
 def get_category_mapping(series):
     return dict(zip(series.cat.categories, range(len(series.cat.codes))))
@@ -41,10 +38,13 @@ class NameExtractor:
     def extract_names(self, parsed_document, titles):
         names = []
         for title in titles:
-            section = parsed_document[title]
+            section = title + parsed_document[title]
+            if len(section) == 0:
+                continue;
 
             headers = {'Content-type': 'text/plain; charset=utf-8'}
             response = requests.post(self.dependency_parser_url, data=section.encode('utf-8'), headers=headers)
+
             data = conll_df(response.text)
             data.w = data.w.astype(str)
             data.l = data.l.astype(str)
@@ -67,3 +67,32 @@ class NameExtractor:
                     ner = []
 
         return skip_allmost_duplicates(np.unique(names))
+
+    def create_graph(self,destination_file, files):
+        """
+        :param destination_file: Temporary file, when using with clause it is removed automatically.
+        It is used to create graph in .pdf format.
+        :param files: contains files and their extracted names to be visualized
+        :return: path to created pdf file. ATTENTION! Remember to delete this file after sent to user.
+        """
+
+        dot = Digraph(comment='Nimet eri tiedostoissa.')
+        person_to_file = {}
+        for i, fn in enumerate(files['filenames']):
+            id = 'f-' + str(i)
+            dot.node(id, fn, color='red')
+            for j, person in enumerate(files[fn]['extracted_names']):
+                if person in person_to_file:
+                    person_to_file[person].append(id)
+                else:
+                    person_to_file[person] = [id]
+
+        for i,person in enumerate(person_to_file.keys()):
+            id = 'p-'+ str(i)
+            dot.node(id, person, color='blue')
+
+            for file_id in person_to_file[person]:
+                dot.edge(id, file_id)
+
+        dot.render(destination_file)
+        return destination_file + '.pdf'

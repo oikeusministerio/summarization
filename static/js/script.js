@@ -1,19 +1,24 @@
 
 var server_base_path = 'http://localhost:5000'
 
-function sendText(method,returnJustification) {
-    var summary_length = document.getElementById("cp_summary_length").value
+function prepareRequestText(path, method, summaryLength) {
     var content = document.getElementById("content").value
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", server_base_path + "/summarize", true);
+    xhr.open("POST", server_base_path + path, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    returnJustification = "True"
     xhr.send(JSON.stringify({
         content: content,
-        summary_length: summary_length,
+        summary_length: summaryLength,
         method: method,
-        return_justification:returnJustification,
+        return_justification: returnJustification,
         return_type: 'json'
     }));
+    return xhr
+}
+
+function sendText(path, method,summaryLength) {
+    var xhr = prepareRequestText(path, method, summaryLength)
     xhr.onload = function() {
       document.getElementById("in_progress").innerHTML = ""
       document.getElementById("submit_button").disabled = false;
@@ -27,6 +32,21 @@ function sendText(method,returnJustification) {
         if(method == 'embedding' && returnJustification == "True") {
             fetchVisualisation(data.words,data.neighbors)
         }
+      } else {
+        showError(data.error)
+      }
+    }
+}
+
+function sendTextNER(path) {
+    var xhr = prepareRequestText(path, null, null)
+    xhr.onload = function() {
+      document.getElementById("in_progress").innerHTML = ""
+      document.getElementById("submit_button_named_entity").disabled = false;
+
+      var data = JSON.parse(this.responseText);
+      if(data.success) {
+        document.getElementById("output_div").innerHTML = data.names
       } else {
         showError(data.error)
       }
@@ -102,7 +122,8 @@ function send(e) {
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "copy_paste_input") {
-        sendText(method,returnJustification)
+        var summaryLength = document.getElementById("cp_summary_length").value
+        sendText('/summarize',method,summaryLength)
     } else if(textOrFile == "directory_input") {
         var summaryLength = document.getElementById("dir_summary_length").value
         var files = document.getElementById("multiple_files").files
@@ -119,6 +140,18 @@ function send(e) {
         } else {
             sendFiles('/summarize/file',files, method,summaryLength,returnType)
         }
+    }
+}
+
+function sendForNer(e) {
+    e.preventDefault();
+    clearCanvas();
+    document.getElementById("submit_button_named_entity").disabled = true;
+    document.getElementById("output_div").innerHTML = ""
+
+    var inputMode = document.querySelector('input[name="text_input_mode"]:checked').value;
+    if (inputMode == "copy_paste_input") {
+        sendTextNER('/entities')
     }
 }
 
@@ -171,6 +204,7 @@ function showMultiSectionSummary(data) {
 
 function setup() {
     document.getElementById("submit_button").addEventListener("click", send);
+    document.getElementById("submit_button_named_entity").addEventListener("click", sendForNer);
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     toggleTextInputField({value: textOrFile})
@@ -202,10 +236,6 @@ function toggleTextInputField(e) {
         document.getElementById("directory_input").style.display = "block";
         //document.getElementById("return_justification").style.display = "none";
     }
-}
-
-function enableSubmitting(e) {
-
 }
 
 function fetchVisualisation(words, neighbors) {

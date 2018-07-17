@@ -10,14 +10,6 @@
             <p>{{ data[fn][title].summary }}</p>
           {% endfor %}
         </div>
-        <div class="column right_column">
-            <h3> Henkilöt </h3>
-            <ul>
-            {% for name in data[fn].extracted_names %}
-                <li><p>{{ name }}</p></li>
-            {% endfor %}
-            </ul>
-        </div>
       </div>
     {% endfor %}
 </div>

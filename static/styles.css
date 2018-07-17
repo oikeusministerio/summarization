@@ -74,14 +74,10 @@ table, th, td {
 }
 
 .left_column {
-    width: 20%;
+    width: 30%;
     word-wrap: break-word;
 }
 
 .middle_column {
-    width: 60%;
-}
-
-.right_column {
-    width: 20%;
+    width: 70%;
 }

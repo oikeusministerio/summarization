@@ -1,4 +1,4 @@
-from flask import request, send_from_directory, send_file
+from flask import request
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json

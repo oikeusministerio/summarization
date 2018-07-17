@@ -4,7 +4,6 @@ import pandas as pd
 from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
 from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSummary
 from extractive_summary.DocumentParser import DocumentParser
-from extractive_summary.NameExtractor import NameExtractor
 from tools.exceptions import SummarySizeTooSmall
 
 from dask import delayed, compute
@@ -27,7 +26,6 @@ class ParallelSummary:
 
     def __init__(self, summarizer):
         self.summarizer = summarizer
-        self.name_extractor = NameExtractor()
 
     def summarize(self, parsed_document, original_titles, method, summary_length):
         summarize_one = lambda title : summarization_job(self.summarizer, parsed_document, method, summary_length, title)
@@ -38,8 +36,6 @@ class ParallelSummary:
         for i in range(results.shape[0]):
             title,summary, positions = results.iloc[i]
             summaries[title] = {'summary': summary, 'positions': positions}
-        names = self.name_extractor.extract_names(parsed_document, original_titles) # parallel
-        summaries['extracted_names'] = names
         return summaries
 
 class Summarizer:

@@ -3,6 +3,7 @@ from .NameExtractor import NameExtractor
 from .DocumentParser import DocumentParser
 from tools.tools import load_data
 import tempfile
+import os.path
 
 class TestNameExtractor(unittest.TestCase):
     """
@@ -63,3 +64,18 @@ class TestNameExtractor(unittest.TestCase):
 
                     for name in names_found:
                         self.assertLess(len(name), 100, 'name: ' + name) # maybe some words are even longer :D
+
+    def test_drawing_graph(self):
+        extractor = NameExtractor()
+        files = {'filenames':['filu1.docx', 'kakkos-filu.txt'], 'filu1.docx':{'extracted_names':['Hessu', 'Heluna']}, 'kakkos-filu.txt':{'extracted_names':['Heluna', 'Musta-Pekka']}}
+
+        with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
+            filename = extractor.create_graph(tmp_file.name,files)
+            self.assertTrue(os.path.isfile(filename))
+            pdf_file = filename + '.pdf'
+            self.assertTrue(os.path.isfile(pdf_file))
+
+        self.assertFalse(os.path.isfile(filename))
+        self.assertTrue(os.path.isfile(pdf_file))
+        os.remove(pdf_file)
+        self.assertFalse(os.path.isfile(pdf_file))
