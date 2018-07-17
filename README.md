@@ -57,6 +57,10 @@ curl -v -F file=@testi.docx 'http://localhost:5000/summarize/file?summary_length
 ```
 
 #### Run tests
+Start dependency parser before running tests
+```bash
+docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
+```
 ```
 python -m unittest extractive_summary/summary/Test*
 python -m unittest extractive_summary/TestDocumentParser.py
