@@ -16,10 +16,9 @@ class TestNameExtractor(unittest.TestCase):
         extractor = NameExtractor()
 
         with open('judgments/data/1999_78.txt', 'rb') as file:
-            parser = DocumentParser(file)
-            parsed_document, titles = parser.parse_txt()
+            text = file.read().decode('utf8')
 
-            names_found = extractor.extract_names(parsed_document, titles)
+            names_found, _ = extractor.extract_names(text)
 
             names = ['Tartto Viro', 'Venäjä', 'Suomi', \
                      'Haarmann', 'Tulokas', 'Hidén', 'Palaja', 'Krogerus', 'Elisa Mäntysaari']
@@ -32,10 +31,9 @@ class TestNameExtractor(unittest.TestCase):
             self.assertLessEqual(len(names) - count, len(names) // 4) # max 1/4 not found
 
         with open('judgments/data/2000_67.txt', 'rb') as file:
-            parser = DocumentParser(file)
-            parsed_document, titles = parser.parse_txt()
+            text = file.read().decode('utf8')
 
-            names_found = extractor.extract_names(parsed_document, titles)
+            names_found, _ = extractor.extract_names(text)
 
             names = ['Erkki','Olavi','Närhi', 'Art-Pine', 'Martti', 'Kääriäinen', 'Eija', 'Kääriäinen','Peltonen', \
                      'Aarnio-Helmisen', 'Heinonen', 'Nikkarinen', 'Wirilander', 'Möller', 'Välimäki', 'Pasi Kumpula']
@@ -49,33 +47,45 @@ class TestNameExtractor(unittest.TestCase):
     def test_that_super_long_words_not_extracted(self):
         extractor = NameExtractor()
 
-        data = load_data('judgments/data', N=10)
+        data = load_data('judgments/data', N=2)
         for i, row in data.iterrows():
             text = row['text']
-            with tempfile.NamedTemporaryFile(suffix='.txt') as tmp_file:
-                with open(tmp_file.name, 'w') as file:
-                    file.write(text);
-                    file.close()
-                with open(tmp_file.name, 'rb') as file:
-                    parser = DocumentParser(file)
-                    parsed_document, titles = parser.parse_txt()
+            names_found, _ = extractor.extract_names(text)
 
-                    names_found = extractor.extract_names(parsed_document, titles)
+            for name in names_found:
+                self.assertLess(len(name), 100, 'name: ' + name) # maybe some words are even longer :D
 
-                    for name in names_found:
-                        self.assertLess(len(name), 100, 'name: ' + name) # maybe some words are even longer :D
+    def test_extract_names_multifile(self):
+        extractor = NameExtractor()
+
+        file_contents ={'filu1.docx': 'Ensimmäinen nimi on Pekka, toinen on Virtanen. Siis Pekka on nimi ja Virtanen sukunimi. Jack Bauer ei valita.', \
+                        'kakkos-filu.txt': 'Ensimmäinen nimi on Pekka, toinen on Virtanen. Siis Pekka on nimi ja Virtanen sukunimi. Jack Bauer ei valita.'}
+        filenames = ['filu1.docx', 'kakkos-filu.txt']
+        results = extractor.extract_names_directory(file_contents, filenames, extract_names_uniformly=True, names_max_N=4)
+        for i in range(len(results)):
+            self.assertTrue('Pekka' in results[i])
+            self.assertTrue('Virtanen' in results[i])
+
+        # when taking not uniformely, next one will dominate.
+        file_contents['bauer_file.docx'] = 'Jack Bauer kerran. Jack Bauer vielä kerran. Jack Bauer vielä kerran. Jack Bauer vielä kerran. Ja Virtanen.'
+        filenames.append('bauer_file.docx')
+        results2 = extractor.extract_names_directory(file_contents, filenames, extract_names_uniformly=False,
+                                                    names_max_N=4)
+        for i in range(len(results2)):
+            self.assertTrue('Jack Bauer' in results2[i])
+            self.assertTrue('Virtanen' in results2[i])
 
     def test_drawing_graph(self):
         extractor = NameExtractor()
-        files = {'filenames':['filu1.docx', 'kakkos-filu.txt'], 'filu1.docx':{'extracted_names':['Hessu', 'Heluna']}, 'kakkos-filu.txt':{'extracted_names':['Heluna', 'Musta-Pekka']}}
+        files = {'filenames':['filu1.docx', 'kakkos-filu.txt'], 'filu1.docx':['Hessu', 'Heluna'], 'kakkos-filu.txt':['Heluna', 'Musta-Pekka']}
 
         with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
-            filename = extractor.create_graph(tmp_file.name,files)
+            filename = tmp_file.name
+            graph_file = extractor.create_graph(tmp_file.name,files)
             self.assertTrue(os.path.isfile(filename))
-            pdf_file = filename + '.pdf'
-            self.assertTrue(os.path.isfile(pdf_file))
+            self.assertTrue(os.path.isfile(graph_file))
 
         self.assertFalse(os.path.isfile(filename))
-        self.assertTrue(os.path.isfile(pdf_file))
-        os.remove(pdf_file)
-        self.assertFalse(os.path.isfile(pdf_file))
+        self.assertTrue(os.path.isfile(graph_file))
+        os.remove(graph_file)
+        self.assertFalse(os.path.isfile(graph_file))

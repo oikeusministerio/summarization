@@ -8,11 +8,9 @@ import nltk
 nltk.download('punkt') # this one installs rules for punctuation
 
 #inner imports
-from server_routes.SummaryAPI import SummaryAPI
-from server_routes.SummaryFromFileAPI import SummaryFromFileAPI
-from server_routes.VisualisationEmbeddingAPI import VisualisationEmbeddingAPI
-from server_routes.SummarizeDirectoryAPI import SummaryDirectoryAPI
-from server_routes.NamedEntityAPI import NamedEntityAPI
+from server_routes.summary_apis import SummaryAPI, SummaryFileAPI, SummaryDirectoryAPI
+from server_routes.visualisation_apis import VisualisationEmbeddingAPI
+from server_routes.named_entity_apis import NamedEntityAPI, NamedEntityDirectoryAPI
 
 app = Flask(__name__, static_url_path='')
 
@@ -20,11 +18,12 @@ UPLOAD_FOLDER = '/tmp/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 summary_view = SummaryAPI.as_view('summaries')
-file_summary_view = SummaryFromFileAPI.as_view("summaries from file")
+file_summary_view = SummaryFileAPI.as_view("summaries from file")
 directory_view = SummaryDirectoryAPI.as_view("summarize directory")
 visualisation_view = VisualisationEmbeddingAPI.as_view("visualisation")
 
 named_entity_view = NamedEntityAPI.as_view("named entities")
+named_entities_dir_view = NamedEntityDirectoryAPI.as_view("named entities from directory")
 
 app.add_url_rule('/summarize', view_func=summary_view, methods=["POST"])
 app.add_url_rule('/summarize/file', view_func=file_summary_view, methods=["POST"])
@@ -32,6 +31,7 @@ app.add_url_rule('/summarize/directory', view_func=directory_view, methods=["POS
 app.add_url_rule('/visualize/embeddings', view_func=visualisation_view, methods=["GET"])
 
 app.add_url_rule('/entities', view_func=named_entity_view, methods=["POST"])
+app.add_url_rule('/entities/directory', view_func=named_entities_dir_view, methods=["POST"])
 
 @app.route('/js/<path:path>')
 def send_js(path):

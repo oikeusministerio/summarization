@@ -55,7 +55,7 @@ function sendTextNER(path) {
 
 function sendFiles(path, files, method,summaryLength, returnType) {
     if (files.length < 1) {
-        showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
+        showError("Anna tiedosto tai copy-pastea tiivistettävä teksti.");
         document.getElementById("submit_button").disabled = false;
         return;
     }
@@ -96,6 +96,58 @@ function sendFiles(path, files, method,summaryLength, returnType) {
                 document.getElementById("output_div").innerHTML = this.responseText
             } else {
                 //debugger;
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
+            }
+        } else {
+            var data = JSON.parse(this.responseText);
+            showError(data.error)
+        }
+    };
+    xhr.send(fd);
+}
+
+function sendFilesNER(path, files, returnType) {
+    if (files.length < 1) {
+        showError("Anna tiedosto tai copy-pastea tiivistettävä teksti.");
+        document.getElementById("submit_button").disabled = false;
+        return;
+    }
+    var fd = new FormData();
+    if (files.length > 1) {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i]
+            fd.append("file-"+i, file);
+        }
+    } else {
+        fd.append("file", files[0]);
+    }
+
+    var xhr = new XMLHttpRequest();
+    var path =  server_base_path + path + "?return_type="+returnType
+    xhr.open('POST', path, true);
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var percentComplete = (e.loaded / e.total) * 100;
+          console.log(percentComplete + '% uploaded');
+        }
+    };
+    xhr.onload = function() {
+        document.getElementById("in_progress").innerHTML = ""
+        document.getElementById("submit_button_named_entity").disabled = false;
+        if(this.status == 200 || this.status == 201) {
+            if (returnType == 'json') {
+                var data = JSON.parse(this.responseText);
+                showMultiSectionSummary(data);
+            } else if (returnType == 'html'){
+                // THIS IS REALLY UGLY WAY TO HANDLE THIS.
+                // SHOULD BE HANDLED BY
+                // Content-Type: Accept: text/plain or json or html
+                // INSTEAD OF LOGIC IN CODE
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = this.responseText
+            } else {
                 document.getElementById("error_output").innerHTML = ""
                 document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
             }
@@ -152,6 +204,11 @@ function sendForNer(e) {
     var inputMode = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (inputMode == "copy_paste_input") {
         sendTextNER('/entities')
+    } else if (inputMode == "directory_input") {
+        var files = document.getElementById("multiple_files").files
+        var returnTypeSelector = document.getElementById("returnType")
+        var returnType = returnTypeSelector.options[returnTypeSelector.selectedIndex].value
+        sendFilesNER('/entities/directory', files, returnType)
     }
 }
 
