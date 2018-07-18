@@ -77,7 +77,7 @@ class EmbeddingsBasedSummary:
         """
         Counts the distance between candidate_summary and document (words of original document).
 
-        :param candidate_summary: list of words => current summary in iterative optimisation process
+        :param candidate_summary: list of words => current summary_methods in iterative optimisation process
         :return: negative distance between candidate and sentences
         """
         if candidate_summary_words.shape[0] == 0:
@@ -106,8 +106,8 @@ class EmbeddingsBasedSummary:
 
         Implementation of Algorithm 1 in chapter 3
 
-        :param summary_size: the size of summary to be made
-        :return: summary
+        :param summary_size: the size of summary_methods to be made
+        :return: summary_methods
         """
         #sentences_left = self.sentences['sentences'].values # U in algorithm
         #sentences_left = np.array(self.sentences.index.tolist())  # U in algorithm

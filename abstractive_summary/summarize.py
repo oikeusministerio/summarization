@@ -16,7 +16,7 @@ required = parser.add_argument_group('required arguments')
 required.add_argument('-source_dir', help='Path to raw text files used for learning', required=True)
 required.add_argument('-embeddings_dir', help='Path to folder that contains embeddings and dictionary.', required=True)
 required.add_argument('-index', help='The index of targeted text in dataset.', nargs='?', const=0, type=int, default=0)
-required.add_argument('-summary_length', help='The length of produced summary in words. Default 5.', nargs='?', const=5, type=int, default=5)
+required.add_argument('-summary_length', help='The length of produced summary_methods in words. Default 5.', nargs='?', const=5, type=int, default=5)
 args = parser.parse_args()
 
 texts = load_data(args.source_dir) #'judgments/test_data/'

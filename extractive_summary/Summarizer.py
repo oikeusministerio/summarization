@@ -1,8 +1,8 @@
 
 import pandas as pd
 
-from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
-from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSummary
+from extractive_summary.summary_methods.graphbased import GraphBasedSummary
+from extractive_summary.summary_methods.embedding import EmbeddingsBasedSummary
 from extractive_summary.DocumentParser import DocumentParser
 from tools.exceptions import SummarySizeTooSmall
 
