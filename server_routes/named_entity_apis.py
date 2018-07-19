@@ -40,8 +40,7 @@ class NamedEntityAPI(MethodView):
             if param not in request.json:
                 # body should be validated by swagger, but this works also
                 return return_json(json.dumps({'success':False, 'error':'Please provide : ' + str(params)}), 404)
-        #import pdb
-        #pdb.set_trace()
+
         text = request.json['content']
         return_type = request.json['return_type']
         try:
@@ -109,13 +108,12 @@ class NamedEntityDirectoryAPI(MethodView):
             file = request.files[file_id]
             parser = DocumentParser(file)
             if '.docx' in file.filename:
-                # FIND BETTER WAY TO READ THIS parsed_document, titles = parser.parse_docx()
-                text = ''
+                text = parser.read_docx_document()
             elif '.txt' in file.filename:
-                text = file.read().decode('utf8')
+                text = parser.read_txt_document()
             else:
                 continue; # cannot handle this type of file
-                #raise ValueError('File extension not supported.')
+                
             filenames.append(file.filename)
             file_contents[file.filename] = text
 
@@ -132,11 +130,10 @@ class NamedEntityDirectoryAPI(MethodView):
                     with open(image_file, 'rb') as image_binary:
                         image = base64.b64encode(image_binary.read())
 
-                        @after_this_request # delete .pdf file after sent, .gv file is temporary and will be deleted automatically
+                        @after_this_request # delete image_file after sent, .gv file is temporary file and will be deleted automatically
                         def remove_file(response):
                             try:
                                 os.remove(image_file)
-                                image.close()
                             except Exception as error:
                                 print("Error removing or closing downloaded file handle", error)
                             return response
@@ -148,7 +145,6 @@ class NamedEntityDirectoryAPI(MethodView):
                         return response
             else:
                 return return_json(json.dumps({'success': False, 'names': [], 'error': 'Return type not implemented.'}), 404)
-            #return return_json(json.dumps({'success': True, 'names': names_found}), 200)
         except requests.exceptions.ConnectionError as e:
             msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
             return return_json(json.dumps({'success': False, 'names': [], 'error': msg}), 500)

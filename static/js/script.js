@@ -170,12 +170,21 @@ function sendForNer(e) {
     var inputMode = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (inputMode == "copy_paste_input") {
         sendTextNER('/entities', returnType)
-    } else if (inputMode == "directory_input") {
-        var files = document.getElementById("multiple_files").files
+    } else {
+        var fileId;
+        switch (inputMode) {
+          case 'docx_file_upload_input':
+            fileId = "docx_file";
+            break;
+          case 'txt_file_upload_input':
+            fileId = "txt_file";
+            break;
+          default:
+           fileId = 'multiple_files';
+        }
+        var files = document.getElementById(fileId).files
         var path =  server_base_path + '/entities/directory?return_type=' + returnType
         sendFiles(path, files, returnType)
-    } else {
-        showError('Not implemented error') //  KORJAA TÄMÄ
     }
 }
 

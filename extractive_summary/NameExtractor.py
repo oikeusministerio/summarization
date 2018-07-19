@@ -7,6 +7,8 @@ import re
 from graphviz import Digraph
 from dask import delayed, compute
 from collections import Counter
+from nltk import sent_tokenize
+import math
 
 def get_category_mapping(series):
     return dict(zip(series.cat.categories, range(len(series.cat.codes))))
@@ -77,29 +79,36 @@ class NameExtractor:
         if len(text) == 0:
             return [],[];
 
-        response = send_to_dependency_parser(self.dependency_parser_url, text)
-        data = conll_df(response.text)
-        data.w = data.w.astype(str)
-        data.l = data.l.astype(str)
-        data.reset_index(level=['s','i'], inplace=True)
+        sentences = np.array(sent_tokenize(text, language="finnish"))
+        N = len(sentences)
+        iterations = math.ceil(N / 100) # send maximum 100 words at a time.
 
-        ner = []
-        for i in range(data.shape[0]):
-            word = data.iloc[i].w
-            lemma = data.iloc[i].l
-            role = data.iloc[i].x
-            if role == 'PROPN' and self.is_clean(word):
-                to_add = lemma if lemma.istitle() else word
-                if self.ending_special_char.match(to_add):
-                    to_add = to_add[:-1]
-                    if len(to_add) == 0:
-                        continue;
-                to_add = self.contains_special_char.split(to_add)[0] # take only beginning
-                ner.append(to_add)
-                continue;
-            if len(ner) > 0:
-                names.update([' '.join(ner)])
-                ner = []
+        for id_set in np.array_split(np.arange(N), iterations):
+            sub_text = ' '.join(sentences[id_set])
+
+            response = send_to_dependency_parser(self.dependency_parser_url, sub_text)
+            data = conll_df(response.text)
+            data.w = data.w.astype(str)
+            data.l = data.l.astype(str)
+            data.reset_index(level=['s','i'], inplace=True)
+
+            ner = []
+            for i in range(data.shape[0]):
+                word = data.iloc[i].w
+                lemma = data.iloc[i].l
+                role = data.iloc[i].x
+                if role == 'PROPN' and self.is_clean(word):
+                    to_add = lemma if lemma.istitle() else word
+                    if self.ending_special_char.match(to_add):
+                        to_add = to_add[:-1]
+                        if len(to_add) == 0:
+                            continue;
+                    to_add = self.contains_special_char.split(to_add)[0] # take only beginning
+                    ner.append(to_add)
+                    continue;
+                if len(ner) > 0:
+                    names.update([' '.join(ner)])
+                    ner = []
         del names[''];
         unique_names = skip_allmost_duplicates(list(names.keys()))
         return unique_names, [names[n] for n in unique_names]

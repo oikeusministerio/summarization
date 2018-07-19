@@ -71,7 +71,11 @@ class DocumentParser:
 
         return parsed_document, titles
 
-
+    def read_docx_document(self):
+        """
+        :return: full .docx file
+        """
+        return ' '.join([paragraph.text for paragraph  in Document(self.file).paragraphs])
 
     def parse_txt(self, section_min_sentence=50, sections_max_length=175):
         """
@@ -159,3 +163,6 @@ class DocumentParser:
 
     def paragraph_count(self):
         return len(self.document.paragraphs)
+
+    def read_txt_document(self):
+        return self.file.read().decode('utf8')
