@@ -1,9 +1,11 @@
 
 import os
 import unittest
-from .DocumentParser import DocumentParser, count_sentences_left, split_too_long_sections
+from .parsing import DocumentParser, count_sentences_left, split_too_long_sections
 from nltk import sent_tokenize
 import numpy as np
+import tempfile
+from werkzeug.datastructures import FileStorage
 
 class TestDocumentParser(unittest.TestCase):
 
@@ -59,6 +61,14 @@ class TestDocumentParser(unittest.TestCase):
         parsed2, titles2 = split_too_long_sections(parsed, titles, 2, 2)
 
         self.assertEqual(len(titles2), 4)
+
+    def test_pdf_parser(self):
+        dirname, _ = os.path.split(os.path.abspath(__file__))
+        with open(dirname + '/test_files/seven_page.pdf', 'rb') as file:
+            file_storage = FileStorage(file)
+            parser = DocumentParser(file_storage)
+            text = parser.parse_pdf()
+            self.assertTrue(len(text) > 0)
 
 if __name__ == '__main__':
     unittest.main()

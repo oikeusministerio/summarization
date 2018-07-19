@@ -1,6 +1,6 @@
 import unittest
 from .NameExtractor import NameExtractor
-from .DocumentParser import DocumentParser
+from .parsing import DocumentParser
 from tools.tools import load_data
 import tempfile
 import os.path

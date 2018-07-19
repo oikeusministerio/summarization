@@ -24,7 +24,11 @@ For graph visualisations, please install Graphviz
 ```bash
 sudo apt install python-pydot python-pydot-ng graphviz
 ```
-
+PDF reading modules requires installing following packages
+```bash
+sudo apt-get install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr \
+flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+```
 
 ## Judgments
 

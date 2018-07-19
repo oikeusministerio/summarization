@@ -3,7 +3,7 @@ from flask.views import MethodView
 import json
 from server_routes.helpers import return_json
 from extractive_summary.NameExtractor import NameExtractor
-from extractive_summary.DocumentParser import DocumentParser
+from extractive_summary.parsing import DocumentParser
 import tempfile
 import requests
 import base64

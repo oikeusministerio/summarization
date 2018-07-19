@@ -14,3 +14,4 @@ gensim
 "dask[distributed]"
 imgkit
 graphviz
+textract

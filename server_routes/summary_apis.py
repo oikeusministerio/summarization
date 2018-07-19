@@ -79,7 +79,7 @@ class SummaryAPI(MethodView):
                                404)
 
 
-ALLOWED_EXTENSIONS = ['docx','txt']
+ALLOWED_EXTENSIONS = ['docx','txt', 'pdf']
 
 def allowed_file(filename):
     return '.' in filename and \

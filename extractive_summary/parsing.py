@@ -5,7 +5,9 @@ from nltk import sent_tokenize
 import pandas as pd
 import re
 from tools.tools import sentence_tokenize
-
+import textract
+from tempfile import NamedTemporaryFile
+import os
 
 def count_sentences_left(sections):
     sections_df = pd.Series(np.array(sections))
@@ -166,3 +168,14 @@ class DocumentParser:
 
     def read_txt_document(self):
         return self.file.read().decode('utf8')
+
+    def parse_pdf(self):
+        with NamedTemporaryFile(suffix='.pdf') as tmp_file:
+            filename = tmp_file.name
+
+            self.file.save(filename)
+            text = textract.process(filename).decode('utf-8')
+
+            callback = lambda pat: pat.group(0)[0] + ' ' + pat.group(0)[2]
+            text = re.sub('\w\\n\w', callback, text)
+            return text
