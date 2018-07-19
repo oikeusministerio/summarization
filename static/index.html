@@ -22,10 +22,8 @@
                  <h2>Tiivistettävä teksti:</h2><br>
                  <div id="text_input">
                      <div>
-                          <input type="radio" name="text_input_mode" value="docx_file_upload_input" checked id="docx_file_upload_input_button" onclick="toggleTextInputField(this)">
-                          <label for="docx_file_upload_input_button">Teksti .docx tiedostossa</label>
-                          <input type="radio" name="text_input_mode" value="txt_file_upload_input" checked id="txt_file_upload_input_button" onclick="toggleTextInputField(this)">
-                          <label for="txt_file_upload_input_button">Teksti .txt tiedostossa</label>
+                          <input type="radio" name="text_input_mode" value="single_file_upload_input" checked id="single_file_upload_input_button" onclick="toggleTextInputField(this)">
+                          <label for="single_file_upload_input_button">Teksti .docx, .txt tai .pdf tiedostossa</label>
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
                           <label for="copy_paste_input_button"> Leikkaa ja liima teksti </label><br>
                           <input type="radio" name="text_input_mode" value="directory_input" id="directory_input_button" onclick="toggleTextInputField(this)">
@@ -33,28 +31,22 @@
                       </div>
                      <br>
                      <div id="content_input_wrapper">
-                         <div id="docx_file_upload_input">
+                         <div id="single_file_upload_input">
                              <p>
                               Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
-                              <input type="number" name="quantity" min="10" max="160" value="50" id="docx_summary_length"/>
+                              <input type="number" name="quantity" min="10" max="160" value="50" id="single_summary_length"/>
                              </p><br>
-                             <p>Tiedoston teksti pilkotaa kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
-                            <input id="docx_file" type="file" name="file" accept=".docx"><br>
-                         </div>
-                         <div id="txt_file_upload_input">
-                             <p>
-                              Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
-                              <input type="number" name="quantity" min="10" max="160" value="50" id="txt_summary_length"/>
-                             </p><br>
-                             <p>Tiedoston teksti pilkotaa kappaleisiin niin, että otsikot tunnistetaan kahdesta rivinvaihdosta ja kappaleet ovat pituudeltaan 50 - 175 lausetta. Pidemmät kappaleet tiivistetään useassa osassa.</p>
-                            <input id="txt_file" type="file" name="file" accept=".txt"><br>
+                             <p>DOCX: Tiedoston teksti pilkotaan kappaleisiin niin, että aina uusi otsikko (tyyli Title tai Heading) aloittaa kappaleen.</p>
+                             <p>TXT: Tiedoston teksti pilkotaan kappaleisiin niin, että otsikot tunnistetaan kahdesta rivinvaihdosta ja kappaleet ovat pituudeltaan 50 - 175 lausetta. Pidemmät kappaleet tiivistetään useassa osassa.</p>
+                             <p>PDF: TODO</p>
+                             <input id="single_file" type="file" name="file" accept=".pdf,.txt,.docx"><br>
                          </div>
                          <div id="directory_input">
                              <p>
                                  Tiivistelmän pituus (sanoissa, välillä 10 ja 160)
                                  <input type="number" name="quantity" min="10" max="160" value="50" id="dir_summary_length"/>
                              </p><br>
-                             <p>Kansiollinen tiedostoja</p>
+                             <p>Useampia tiedostoja tiedostoja</p>
                              <input id="multiple_files" type="file" multiple />
                          </div>
                          <div id="copy_paste_input">
@@ -66,16 +58,6 @@
                          </div>
                      </div>
                  </div>
-                 <!--
-                 <div id="return_justification">
-                    <p>
-                      Tuotetaanko samalla perustelu :
-                      <div>
-                          <input type="radio" name="return_justification" value="True" checked id="true"> <label for="true">Kyllä</label>
-                          <input type="radio" name="return_justification" value="False" id="false"> <label for="false"> Ei </label><br>
-                      </div>
-                     </p><br>
-                 </div>  -->
                  <div>
                      <p>Luo tiivistelmä tiedostomuodossa : </p>
                      <select id="returnType">

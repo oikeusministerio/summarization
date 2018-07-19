@@ -1,4 +1,4 @@
-from flask import request, make_response, after_this_request
+from flask import request, make_response, after_this_request, render_template
 from flask.views import MethodView
 import json
 from server_routes.helpers import return_json
@@ -119,11 +119,12 @@ class NamedEntityDirectoryAPI(MethodView):
 
         try:
             results = self.name_extractor.extract_names_directory(file_contents, filenames)
+            graph_data = {}
+            for i, filename in enumerate(filenames):
+                graph_data[filename] = results[i]
+            graph_data['filenames'] = filenames
+
             if return_type == 'png':
-                graph_data = {}
-                for i, filename in enumerate(filenames):
-                    graph_data[filename] = results[i]
-                graph_data['filenames'] = filenames
                 with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
                     image_file = self.name_extractor.create_graph(tmp_file.name, graph_data)
 
@@ -144,7 +145,8 @@ class NamedEntityDirectoryAPI(MethodView):
                             'Content-Disposition', 'attachment', filename='named_entity_graph.png')
                         return response
             else:
-                return return_json(json.dumps({'success': False, 'names': [], 'error': 'Return type not implemented.'}), 404)
+                return render_template('named_entities.html', data=graph_data)
+                #return return_json(json.dumps({'success': True, 'names': names_found}), 200)
         except requests.exceptions.ConnectionError as e:
             msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
             return return_json(json.dumps({'success': False, 'names': [], 'error': msg}), 500)

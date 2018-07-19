@@ -140,9 +140,8 @@ function send(e) {
                                     + "&method=" +method + "&return_type="+returnType
         sendFiles(path,files, returnType) //json
     } else {
-        var isDocxFile = (textOrFile == "docx_file_upload_input")
-        var fileId = isDocxFile ? "docx_file" : "txt_file"
-        var lengthId = isDocxFile ? "docx_summary_length" : "txt_summary_length"
+        var fileId = "single_file"
+        var lengthId = "single_summary_length"
         var summaryLength = document.getElementById(lengthId).value
         var files = document.getElementById(fileId).files
         if( document.getElementById(fileId).files.length == 0 ){
@@ -171,17 +170,7 @@ function sendForNer(e) {
     if (inputMode == "copy_paste_input") {
         sendTextNER('/entities', returnType)
     } else {
-        var fileId;
-        switch (inputMode) {
-          case 'docx_file_upload_input':
-            fileId = "docx_file";
-            break;
-          case 'txt_file_upload_input':
-            fileId = "txt_file";
-            break;
-          default:
-           fileId = 'multiple_files';
-        }
+        var fileId = (inputMode == "directory_input") ? "multiple_files" : "single_file"
         var files = document.getElementById(fileId).files
         var path =  server_base_path + '/entities/directory?return_type=' + returnType
         sendFiles(path, files, returnType)
@@ -244,25 +233,17 @@ function setup() {
 }
 
 function toggleTextInputField(e) {
-    if(e.value == "docx_file_upload_input") {
+    if(e.value == "single_file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("docx_file_upload_input").style.display = "block";
-        document.getElementById("txt_file_upload_input").style.display = "none";
-        document.getElementById("directory_input").style.display = "none";
-    } else if (e.value == "txt_file_upload_input") {
-        document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("docx_file_upload_input").style.display = "none";
-        document.getElementById("txt_file_upload_input").style.display = "block";
+        document.getElementById("single_file_upload_input").style.display = "block";
         document.getElementById("directory_input").style.display = "none";
     } else if (e.value == "copy_paste_input") {
         document.getElementById("copy_paste_input").style.display = "block";
-        document.getElementById("docx_file_upload_input").style.display = "none";
-        document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("single_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
     } else {
         document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("docx_file_upload_input").style.display = "none";
-        document.getElementById("txt_file_upload_input").style.display = "none";
+        document.getElementById("single_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "block";
     }
 }
