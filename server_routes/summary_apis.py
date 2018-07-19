@@ -72,7 +72,7 @@ class SummaryAPI(MethodView):
             summary, positions = self.summarizer.summarize(text, method, length)
             return return_json(json.dumps({'success':True, 'summary':summary, 'positions':positions}), 201)
         except TextTooLong as e:
-            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method'+str(e)+'Please try other one.'}), 404)
+            return return_json(json.dumps({'success': False, 'error': 'Text is too long for this method'+str(e)+'Please split the text.'}), 404)
         except SummarySizeTooSmall as e:
             return return_json(json.dumps(
                 {'success': False, 'error': str(e) + " Please define bigger summary length."}),

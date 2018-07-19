@@ -18,7 +18,7 @@ class GraphBasedSummary:
         self.sentences = self.split_sentences(text)
         N = len(self.sentences)
         if N > GraphBasedSummary.max_sentences:
-            raise TextTooLong(" " +  str(N) + " sentences are too many for the graph based method (max "+GraphBasedSummary.max_sentences+").")
+            raise TextTooLong(" " +  str(N) + " sentences are too many for the graph based method (max "+str(GraphBasedSummary.max_sentences)+").")
         self.dumping_factor = 0.85
         self.threshold = threshold
         summarizer.INPUT_MIN_LENGTH = GraphBasedSummary.min_sentences

@@ -35,16 +35,42 @@ class NamedEntityAPI(MethodView):
           201:
             description: Named entities extracted
         """
-        params = ['content']
+        params = ['content','return_type']
         for param in params:
             if param not in request.json:
                 # body should be validated by swagger, but this works also
                 return return_json(json.dumps({'success':False, 'error':'Please provide : ' + str(params)}), 404)
-
+        #import pdb
+        #pdb.set_trace()
         text = request.json['content']
+        return_type = request.json['return_type']
         try:
             names_found,_ = self.name_extractor.extract_names(text)
-            return return_json(json.dumps({'success': True, 'names': names_found}), 200)
+            if return_type == 'png':
+                graph_data = {}
+                graph_data['copy pastettu teksti'] = names_found
+                graph_data['filenames'] = ['copy pastettu teksti']
+                with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
+                    image_file = self.name_extractor.create_graph(tmp_file.name, graph_data)
+
+                    with open(image_file, 'rb') as image_binary:
+                        image = base64.b64encode(image_binary.read())
+
+                        @after_this_request # delete .pdf file after sent, .gv file is temporary and will be deleted automatically
+                        def remove_file(response):
+                            try:
+                                os.remove(image_file)
+                            except Exception as error:
+                                print("Error removing or closing downloaded file handle", error)
+                            return response
+
+                        response = make_response(image)
+                        response.headers.set('Content-Type', 'image/png')
+                        response.headers.set(
+                            'Content-Disposition', 'attachment', filename='named_entity_graph.png')
+                        return response
+            else:
+                return return_json(json.dumps({'success': True, 'names': names_found}), 200)
         except requests.exceptions.ConnectionError as e:
             msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
             return return_json(json.dumps({'success': False, 'names': [], 'error': msg}), 500)
