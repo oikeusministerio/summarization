@@ -1,29 +1,13 @@
 
-import numpy as np
 import pickle
-import redis
-import unittest
-from unittest.mock import patch
-from .EmbeddingsBasedSummary import EmbeddingsBasedSummary
-from tools.tools import load_data
+from .embedding import EmbeddingsBasedSummary
 import re
 
-class RedisMock:
-
-    def __init__(self):
-        self.data = {}
-        self.distances = [[0, 11, 2], [3, 0, 4], [5, 6, 0]]
-        for i, dist in enumerate(self.distances):
-            self.set(i, pickle.dumps(np.array(dist).reshape(1, -1)))
-
-    def set(self,key, val):
-        self.data[key] = val
-
-    def get(self, key):
-        return self.data[key]
-
-def mock_redis_client(a,b):
-    return RedisMock()
+import numpy as np
+import unittest
+from .graphbased import GraphBasedSummary
+from tools.tools import load_data
+from nltk import word_tokenize
 
 class TestEmbeddingsBasedSummary(unittest.TestCase):
 
@@ -113,6 +97,22 @@ class TestEmbeddingsBasedSummary(unittest.TestCase):
         result = summary.precalcule_sentence_indexes(sentences)
         self.assertTrue((result[0] == np.array([0,1])).all())
         self.assertTrue((result[1] == np.array([1])).all())
+
+def get_text(i):
+    fname = "judgments/data"
+    data = load_data(fname, N=(i+1))
+    return data.iloc[i]['text']
+
+class TestGraphBasedSummary(unittest.TestCase):
+
+    def test_summarization(self):
+        for text in [get_text(4), get_text(5)]:
+            for words in [100,200,500]:
+                summarizer = GraphBasedSummary(text)
+                sentences, _ = summarizer.summarize(word_count=words)
+                summary = " ".join(sentences)
+                real_word_count = len([w for w in word_tokenize(summary) if len(w) > 1])
+                self.assertLessEqual(real_word_count, words)
 
 if __name__ == '__main__':
     unittest.main()

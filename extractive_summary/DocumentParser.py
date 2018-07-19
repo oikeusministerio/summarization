@@ -4,6 +4,7 @@ from docx import Document
 from nltk import sent_tokenize
 import pandas as pd
 import re
+from tools.tools import sentence_tokenize
 
 
 def count_sentences_left(sections):
@@ -17,7 +18,7 @@ def split_too_long_sections(parsed_document, titles, sections_max_length, sectio
     # let's check if some section is too long
     for title_i,title in enumerate(titles):
         section = parsed_document[title]
-        sents = sent_tokenize(section, language="finnish")
+        sents = sentence_tokenize(section)
         n = len(sents)
         if n > sections_max_length:
             optimal = (section_min_sentence + sections_max_length) / 2
@@ -70,7 +71,11 @@ class DocumentParser:
 
         return parsed_document, titles
 
-
+    def read_docx_document(self):
+        """
+        :return: full .docx file
+        """
+        return ' '.join([paragraph.text for paragraph  in Document(self.file).paragraphs])
 
     def parse_txt(self, section_min_sentence=50, sections_max_length=175):
         """
@@ -82,13 +87,13 @@ class DocumentParser:
         :return: parsed txt file
         """
         self.text = self.file.read().decode('utf8')
-        sents = [s for s in sent_tokenize(self.text, language="finnish") if len(s) > 2]
+        sents = [s for s in sentence_tokenize(self.text) if len(s) > 2]
         total_sents = len(sents)
         if total_sents < section_min_sentence: # all text will fit in one section
             parsed_document = {}
             modified_text = self.text.replace('\n', '.').replace('..','.')
             # do tokenizing again to verify, that title contains no newlines
-            sents = [s for s in sent_tokenize(modified_text, language="finnish") if len(s) > 2]
+            sents = [s for s in sentence_tokenize(modified_text) if len(s) > 2]
             title = sents[0]
             parsed_document[title] = " ".join(sents[1:])
             return parsed_document, [title]
@@ -101,12 +106,25 @@ class DocumentParser:
         headings_candidates = []
         titles = []
 
-        is_heading = lambda x: len(sent_tokenize(x, language="finnish")) == 1
+        is_heading = lambda x: len(sentence_tokenize(x)) == 1
         for i, section in enumerate(sections[:-1]): # last one cannot be heading
             if is_heading(section):
                 headings_candidates.append((i,section.strip()))
 
         sents_lengths, sents_left = count_sentences_left(sections)
+
+        if len(headings_candidates) == 0: # take first sentence as a title
+            current_section = ''
+            for i,section in enumerate(sections):
+                current_section += section
+                section_sents = sentence_tokenize(current_section)
+                if len(section_sents) >= 2:
+                    title = section_sents[0]
+                    parsed_document[title] = ' '.join(section_sents[1:])
+                    titles.append(title)
+                    current_section = ''
+            if current_section != '':
+                parsed_document[titles[-1]] += current_section
 
         last_section_used = -1
         for heading_i, item in enumerate(headings_candidates):
@@ -145,3 +163,6 @@ class DocumentParser:
 
     def paragraph_count(self):
         return len(self.document.paragraphs)
+
+    def read_txt_document(self):
+        return self.file.read().decode('utf8')

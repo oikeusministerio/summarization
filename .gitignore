@@ -13,3 +13,5 @@ embeddings/embeddings_config.json
 *.ckpt.*
 *checkpoint
 judgments/test_data/*
+*.gv
+*.gv.pdf

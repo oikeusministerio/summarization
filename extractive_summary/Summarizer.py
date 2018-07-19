@@ -1,8 +1,8 @@
 
 import pandas as pd
 
-from extractive_summary.summary.GraphBasedSummary import GraphBasedSummary
-from extractive_summary.summary.EmbeddingsBasedSummary import EmbeddingsBasedSummary
+from extractive_summary.summary_methods.graphbased import GraphBasedSummary
+from extractive_summary.summary_methods.embedding import EmbeddingsBasedSummary
 from extractive_summary.DocumentParser import DocumentParser
 from tools.exceptions import SummarySizeTooSmall
 
@@ -36,7 +36,6 @@ class ParallelSummary:
         for i in range(results.shape[0]):
             title,summary, positions = results.iloc[i]
             summaries[title] = {'summary': summary, 'positions': positions}
-
         return summaries
 
 class Summarizer:

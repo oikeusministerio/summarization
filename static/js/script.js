@@ -1,19 +1,24 @@
 
 var server_base_path = 'http://localhost:5000'
 
-function sendText(method,returnJustification) {
-    var summary_length = document.getElementById("cp_summary_length").value
+function prepareRequestText(path, method, summaryLength, returnType) {
     var content = document.getElementById("content").value
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", server_base_path + "/summarize", true);
+    xhr.open("POST", server_base_path + path, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
+    returnJustification = "True"
     xhr.send(JSON.stringify({
         content: content,
-        summary_length: summary_length,
+        summary_length: summaryLength,
         method: method,
-        return_justification:returnJustification,
-        return_type: 'json'
+        return_justification: returnJustification,
+        return_type: returnType
     }));
+    return xhr
+}
+
+function sendText(path, method,summaryLength) {
+    var xhr = prepareRequestText(path, method, summaryLength, 'json')
     xhr.onload = function() {
       document.getElementById("in_progress").innerHTML = ""
       document.getElementById("submit_button").disabled = false;
@@ -33,85 +38,78 @@ function sendText(method,returnJustification) {
     }
 }
 
-function sendFile(files, method,summaryLength, returnJustification) {
-    if (files.length < 1) {
-        showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
-        document.getElementById("submit_button").disabled = false;
-        return;
-    }
-    var file = files[0]
-    var fd = new FormData();
-    fd.append("file", file);
-
-    var xhr = new XMLHttpRequest();
-    var path =  server_base_path + "/summarize/file?summary_length="+summaryLength
-                                    + "&method=" +method + "&return_type=json"
-    xhr.open('POST', path, true);
-
-    xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-          var percentComplete = (e.loaded / e.total) * 100;
-          console.log(percentComplete + '% uploaded');
-        }
-    };
+function sendTextNER(path, returnType) {
+    var xhr = prepareRequestText(path, null, null, returnType)
     xhr.onload = function() {
         document.getElementById("in_progress").innerHTML = ""
         document.getElementById("submit_button").disabled = false;
-        var data = JSON.parse(this.responseText);
-        if(data.success) {
-            showMultiSectionSummary(data);
+        document.getElementById("submit_button_named_entity").disabled = false;
+        if(this.status == 200 || this.status == 201) {
+            if (returnType == 'json' || returnType == 'html') {
+                var data = JSON.parse(this.responseText);
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = data.names
+            } else {
+                //debugger;
+                document.getElementById("error_output").innerHTML = ""
+                document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
+            }
         } else {
+            var data = JSON.parse(this.responseText);
             showError(data.error)
         }
-    };
-    xhr.send(fd);
+    }
 }
 
-function sendDirectory(files, method,summaryLength, returnType) {
-    if (files.length < 1) {
-        showError("Anna docx tiedosto tai copy-pastea tiivistettävä teksti.");
-        document.getElementById("submit_button").disabled = false;
-        return;
-    }
-    var fd = new FormData();
-    for (var i = 0; i < files.length; i++) {
-        var file = files[i]
-        fd.append("file-"+i, file);
-    }
-
-    var xhr = new XMLHttpRequest();
-    var path =  server_base_path + "/summarize/directory?summary_length="+summaryLength
-                                    + "&method=" +method + "&return_type="+returnType
-    xhr.open('POST', path, true);
-
-    xhr.upload.onprogress = function(e) {
-        if (e.lengthComputable) {
-          var percentComplete = (e.loaded / e.total) * 100;
-          console.log(percentComplete + '% uploaded');
-        }
-    };
-    xhr.onload = function() {
-        document.getElementById("in_progress").innerHTML = ""
-        document.getElementById("submit_button").disabled = false;
+function handleResponse(response, returnType) {
+    document.getElementById("in_progress").innerHTML = ""
+    document.getElementById("submit_button").disabled = false;
+    document.getElementById("submit_button_named_entity").disabled = false;
+    if(response.status == 200 || response.status == 201) {
         if (returnType == 'json') {
-            var data = JSON.parse(this.responseText);
-            if(data.success) {
-                showMultiSectionSummary(data);
-            } else {
-                showError(data.error)
-            }
+            var data = JSON.parse(response.responseText);
+            showMultiSectionSummary(data);
         } else if (returnType == 'html'){
-            // THIS IS REALLY UGLY WAY TO HANDLE
-            // SHOULD BE HANDLED BY
-            // Content-Type: Accept: text/plain or json or html
-            // INSTEAD OF LOGIC IN CODE
             document.getElementById("error_output").innerHTML = ""
-            document.getElementById("output_div").innerHTML = this.responseText
+            document.getElementById("output_div").innerHTML = response.responseText
         } else {
             //debugger;
             document.getElementById("error_output").innerHTML = ""
-            document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + this.response + '" data-src="' + this.response + '"/>'
+            document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + response.response + '" data-src="' + response.response + '"/>'
         }
+    } else {
+        var data = JSON.parse(response.responseText);
+        showError(data.error)
+    }
+}
+
+function sendFiles(path, files, returnType) {
+    if (files.length < 1) {
+        showError("Anna tiedosto tai copy-pastea tiivistettävä teksti.");
+        document.getElementById("submit_button").disabled = false;
+        return;
+    }
+    var fd = new FormData();
+    if (files.length > 1) {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i]
+            fd.append("file-"+i, file);
+        }
+    } else {
+        fd.append("file", files[0]);
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', path, true);
+
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          var percentComplete = (e.loaded / e.total) * 100;
+          console.log(percentComplete + '% uploaded');
+        }
+    };
+    xhr.onload = function() {
+        handleResponse(this, returnType)
     };
     xhr.send(fd);
 }
@@ -121,6 +119,8 @@ function send(e) {
     clearCanvas();
     document.getElementById("submit_button").disabled = true;
     document.getElementById("output_div").innerHTML = ""
+    document.getElementById("error_output").innerHTML = ""
+
 
     document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
     var method = document.querySelector('input[name="method"]:checked').value;
@@ -131,11 +131,14 @@ function send(e) {
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     if (textOrFile == "copy_paste_input") {
-        sendText(method,returnJustification)
+        var summaryLength = document.getElementById("cp_summary_length").value
+        sendText('/summarize',method,summaryLength)
     } else if(textOrFile == "directory_input") {
         var summaryLength = document.getElementById("dir_summary_length").value
         var files = document.getElementById("multiple_files").files
-        sendDirectory(files, method, summaryLength, returnType) //json
+        var path =  server_base_path + '/summarize/directory?summary_length='+summaryLength
+                                    + "&method=" +method + "&return_type="+returnType
+        sendFiles(path,files, returnType) //json
     } else {
         var isDocxFile = (textOrFile == "docx_file_upload_input")
         var fileId = isDocxFile ? "docx_file" : "txt_file"
@@ -146,8 +149,42 @@ function send(e) {
             showError("Anna tiedosto tai syötä teksti.");
             document.getElementById("submit_button").disabled = false;
         } else {
-            sendFile(files, method,summaryLength,returnJustification)
+             var path =  server_base_path + '/summarize/file?summary_length='+summaryLength
+                                    + "&method=" +method + "&return_type="+returnType
+            sendFiles(path,files,returnType)
         }
+    }
+}
+
+function sendForNer(e) {
+    e.preventDefault();
+    clearCanvas();
+    document.getElementById("submit_button_named_entity").disabled = true;
+    document.getElementById("output_div").innerHTML = ""
+    document.getElementById("error_output").innerHTML = ""
+    document.getElementById("in_progress").innerHTML = "Lähetetty, tässä menee noin 1-2 minuuttia."
+
+
+    var returnTypeSelector = document.getElementById("returnType")
+    var returnType = returnTypeSelector.options[returnTypeSelector.selectedIndex].value
+    var inputMode = document.querySelector('input[name="text_input_mode"]:checked').value;
+    if (inputMode == "copy_paste_input") {
+        sendTextNER('/entities', returnType)
+    } else {
+        var fileId;
+        switch (inputMode) {
+          case 'docx_file_upload_input':
+            fileId = "docx_file";
+            break;
+          case 'txt_file_upload_input':
+            fileId = "txt_file";
+            break;
+          default:
+           fileId = 'multiple_files';
+        }
+        var files = document.getElementById(fileId).files
+        var path =  server_base_path + '/entities/directory?return_type=' + returnType
+        sendFiles(path, files, returnType)
     }
 }
 
@@ -200,6 +237,7 @@ function showMultiSectionSummary(data) {
 
 function setup() {
     document.getElementById("submit_button").addEventListener("click", send);
+    document.getElementById("submit_button_named_entity").addEventListener("click", sendForNer);
 
     var textOrFile = document.querySelector('input[name="text_input_mode"]:checked').value;
     toggleTextInputField({value: textOrFile})
@@ -211,30 +249,22 @@ function toggleTextInputField(e) {
         document.getElementById("docx_file_upload_input").style.display = "block";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
-       // document.getElementById("return_justification").style.display = "none";
     } else if (e.value == "txt_file_upload_input") {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "block";
         document.getElementById("directory_input").style.display = "none";
-       // document.getElementById("return_justification").style.display = "none";
     } else if (e.value == "copy_paste_input") {
         document.getElementById("copy_paste_input").style.display = "block";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
-        //document.getElementById("return_justification").style.display = "block";
     } else {
         document.getElementById("copy_paste_input").style.display = "none";
         document.getElementById("docx_file_upload_input").style.display = "none";
         document.getElementById("txt_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "block";
-        //document.getElementById("return_justification").style.display = "none";
     }
-}
-
-function enableSubmitting(e) {
-
 }
 
 function fetchVisualisation(words, neighbors) {

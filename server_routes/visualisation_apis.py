@@ -2,7 +2,7 @@
 from flask import request, send_file
 from flask.views import MethodView
 import json
-from extractive_summary.summary.result_visualization import visualize_embedding_results
+from extractive_summary.summary_methods.result_visualization import visualize_embedding_results
 import numpy as np
 from io import BytesIO
 import ast
@@ -10,7 +10,7 @@ import ast
 class VisualisationEmbeddingAPI(MethodView):
 
     def __init__(self):
-        with open('extractive_summary/config.json', 'r') as f:
+        with open('config.json', 'r') as f:
             config = json.load(f)
             self.embeddings = np.load(config['embeddings_file'])
             dictionary = np.load(config['dictionary_file']).item()

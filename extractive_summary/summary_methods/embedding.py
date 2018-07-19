@@ -4,9 +4,8 @@ import pandas as pd
 from nltk import word_tokenize
 from sklearn.metrics.pairwise import euclidean_distances
 import json
-import time
 
-from tools.exceptions import SummarySizeTooSmall
+from tools.exceptions import SummarySizeTooSmall, TextTooLong
 from tools.tools import sentence_tokenize
 
 class EmbeddingsBasedSummary:
@@ -17,6 +16,7 @@ class EmbeddingsBasedSummary:
     "Summarization based on embedding distributions."
     Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing. 2015.
     """
+    max_sentences = 300
 
     def __init__(self, text, dictionary_file=None, dictionary=None):
         self.word_counter = lambda s: len([w for w in word_tokenize(s) if len(w) > 1])
@@ -31,7 +31,7 @@ class EmbeddingsBasedSummary:
         # when searching argmax, indexes with this value are not selected
         # becouse it is so big
         self.max_distance = -10000000
-        with open('extractive_summary/config.json', 'r') as f:
+        with open('config.json', 'r') as f:
             config = json.load(f)
             self.embeddings_file = config["embeddings_file"]
             self.embeddings = np.load(self.embeddings_file)
@@ -42,9 +42,10 @@ class EmbeddingsBasedSummary:
     def split_document(self, text, minimum_sentence_length=5):
         sentences = sentence_tokenize(text)
         words = word_tokenize(text, language="finnish")
+        words = np.array([w for w in words if len(w) > 1])
+        words = np.array([w.replace('.','').replace(',','') for w in words])
         words = np.array([w.lower() for w in words if w.lower() in self.dictionary]) # ATTENTION! Skipping unknown words here.
         words = np.unique(words)  # considering unique is fine, becouse we will consider THE nearests words, so duplicates are useless
-        words = np.array([w for w in words if len(w) > 1])
 
         sentences_without_newlines = []
         for s in sentences:
@@ -60,7 +61,7 @@ class EmbeddingsBasedSummary:
                 sentences_without_newlines.append(s)
 
         sentences = np.array(sentences_without_newlines)
-        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': sentences}), words
+        return pd.DataFrame({'position': np.arange(len(sentences)), 'sentences': sentences}), words.tolist()
 
     def nearest_neighbors(self, distances, candidate_summary_indexes):
         index_mapping = dict(enumerate(candidate_summary_indexes))
@@ -77,7 +78,7 @@ class EmbeddingsBasedSummary:
         """
         Counts the distance between candidate_summary and document (words of original document).
 
-        :param candidate_summary: list of words => current summary in iterative optimisation process
+        :param candidate_summary: list of words => current summary_methods in iterative optimisation process
         :return: negative distance between candidate and sentences
         """
         if candidate_summary_words.shape[0] == 0:
@@ -103,15 +104,12 @@ class EmbeddingsBasedSummary:
 
     def modified_greedy_algrorithm(self, summary_size):
         """
-
         Implementation of Algorithm 1 in chapter 3
-
-        :param summary_size: the size of summary to be made
-        :return: summary
+        :param summary_size: the size of summary_methods to be made
+        :return: summary_methods
         """
-        #sentences_left = self.sentences['sentences'].values # U in algorithm
-        #sentences_left = np.array(self.sentences.index.tolist())  # U in algorithm
         N = self.sentences.shape[0]
+        print("precalcule")
         sentence_indexes = self.precalcule_sentence_indexes(self.sentences['sentences'].values)
         sentence_distances = self.precalcule_sentence_distances(self.sentences['sentences'].values)
         sentence_lengths = self.sentences['lengths']
@@ -119,6 +117,7 @@ class EmbeddingsBasedSummary:
         handled = np.array([], dtype=int)  # (C \ handled) in algorithm, in other words : list of indexes not in C (C is thing of algiruthm)
         candidate_summary_words = np.array([], dtype=int)
         candidate_word_count = 0
+        print("iterate")
         while(handled.shape[0] < N):
             s_candidates = np.array([
                 self.nearest_neighbor_objective_function(
@@ -139,6 +138,7 @@ class EmbeddingsBasedSummary:
 
             handled = np.append(handled, s_star_i)
 
+        print("post processing")
         # then let's consider sentence, that is the best all alone, algorithm line 6
         s_candidates = np.array([sentence_distances[i] if sentence_lengths[i] <= summary_size else self.max_distance \
                                 for i in range(len(sentence_distances))])
@@ -171,6 +171,10 @@ class EmbeddingsBasedSummary:
         self.sentences['lengths'] = lengths
         if (lengths > word_count).all():
             raise SummarySizeTooSmall("None of sentences is shorter than given length, cannot choose any sentences.")
+
+        N = self.sentences.shape[0]
+        if N > EmbeddingsBasedSummary.max_sentences:
+            raise TextTooLong(" " +  str(N) + " sentences are too many for the embeddings based method (max "+str(EmbeddingsBasedSummary.max_sentences)+").")
 
         selected_sentences, positions, nearest_words = self.modified_greedy_algrorithm(word_count)
         if return_words:
