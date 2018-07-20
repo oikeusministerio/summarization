@@ -13,14 +13,14 @@ class TestDocumentParser(unittest.TestCase):
         dirname, _ = os.path.split(os.path.abspath(__file__))
         with open(dirname + '/test_files/testi.docx', 'rb') as f:
             parser = DocumentParser(f)
-            parsed, titles = parser.parse_docx()
+            parsed, titles = parser.parse_docx_file()
         f.close()
         self.assertEqual(len(titles), 2)
         self.assertTrue(titles[0] not in parsed[titles[0]])
 
         with open(dirname + '/test_files/testi2.docx', 'rb') as f:
             parser = DocumentParser(f)
-            parsed2, titles2 = parser.parse_docx()
+            parsed2, titles2 = parser.parse_docx_file()
         f.close()
         self.assertEqual(len(titles2), 1)
         self.assertTrue("Sisalto" in parsed2)
@@ -32,7 +32,7 @@ class TestDocumentParser(unittest.TestCase):
                 print(filename)
                 with open(dirname + '/test_files/' + filename, 'rb') as f:
                     parser = DocumentParser(f)
-                    parsed, titles = parser.parse_txt(section_min_sentence = section_min_length)
+                    parsed, titles = parser.parse_txt_file(section_min_sentence = section_min_length)
                     sentences = [s for s in sent_tokenize(str(parser.text)) if len(s) > 2]
                 f.close()
                 self.assertGreater(len(titles), 0)
@@ -67,7 +67,7 @@ class TestDocumentParser(unittest.TestCase):
         with open(dirname + '/test_files/seven_page.pdf', 'rb') as file:
             file_storage = FileStorage(file)
             parser = DocumentParser(file_storage)
-            text = parser.parse_pdf()
+            text = parser.parse_pdf_file()
             self.assertTrue(len(text) > 0)
 
 if __name__ == '__main__':

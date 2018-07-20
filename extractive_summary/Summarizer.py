@@ -58,11 +58,11 @@ class Summarizer:
     def summary_from_file(self, file, method, summary_length):
         parser = DocumentParser(file)
         if '.docx' in file.filename:
-            parsed_document, titles = parser.parse_docx()
+            parsed_document, titles = parser.parse_docx_file()
         elif '.txt' in file.filename:
-            parsed_document, titles = parser.parse_txt()
+            parsed_document, titles = parser.parse_txt_file()
         elif '.pdf' in file.filename:
-            parsed_document, titles = parser.parse_pdf()
+            parsed_document, titles = parser.parse_pdf_file()
         else:
             raise ValueError('File extension not supported.')
 

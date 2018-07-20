@@ -12,16 +12,16 @@
         <div id="app_form">
             <h1>Automaattiset tiivistelmät</h1>
              <form>
-                 <p>
+                 <div class="form_input">
                       Käytettävä tiivistysmenetelmä :
                       <div>
                           <input type="radio" name="method" value="graph" checked id="graph"> <label for="graph">Verkkoon perustuva (graph)</label>
                           <input type="radio" name="method" value="embedding" id="embedding"> <label for="embedding"> Sanavektoreihin perustuva (word embeddings) </label><br>
                       </div>
-                  </p>
+                  </div>
                  <h2>Tiivistettävä teksti:</h2><br>
                  <div id="text_input">
-                     <div>
+                     <div class="form_input">
                           <input type="radio" name="text_input_mode" value="single_file_upload_input" checked id="single_file_upload_input_button" onclick="toggleTextInputField(this)">
                           <label for="single_file_upload_input_button">Teksti .docx, .txt tai .pdf tiedostossa</label>
                           <input type="radio" name="text_input_mode" value="copy_paste_input" id="copy_paste_input_button" onclick="toggleTextInputField(this)">
@@ -58,6 +58,8 @@
                          </div>
                      </div>
                  </div>
+                 <br>
+                 <br>
                  <div>
                      <p>Luo tiivistelmä tiedostomuodossa : </p>
                      <select id="returnType">
@@ -66,6 +68,7 @@
                       <option value="json">JSON - muotoillaan selaimessa </option>
                     </select>
                  </div>
+                 <br>
                  <br>
                  <input type="submit" value="Luo tiivistelmä" id="submit_button"/>
                  <input type="submit" value="Hae erisnimiä" id="submit_button_named_entity"/>

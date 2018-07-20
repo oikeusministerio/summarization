@@ -111,6 +111,8 @@ class NamedEntityDirectoryAPI(MethodView):
                 text = parser.read_docx_document()
             elif '.txt' in file.filename:
                 text = parser.read_txt_document()
+            elif '.pdf' in file.filename:
+                text = parser.read_pdf_document()
             else:
                 continue; # cannot handle this type of file
                 
