@@ -3,6 +3,7 @@ from flask import request, render_template, make_response
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
+from extractive_summary.output import SummaryWriter
 import imgkit
 import tempfile
 import base64
@@ -159,6 +160,19 @@ class SummaryFileAPI(MethodView):
             return return_json(json.dumps(result), 201)
         elif return_type == 'html':
             return render_template('multi_file_summary.html', data=result)
+        elif return_type == 'docx':
+            with tempfile.NamedTemporaryFile(suffix='.docx') as t:
+                sw = SummaryWriter(result)
+                sw.write_docx(t.name)
+                with open(t.name, 'rb') as image_binary:
+                    image = base64.b64encode(image_binary.read())
+                    response = make_response(image)
+                    mimetype = ' application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    response.headers.set('Content-Type', mimetype)
+                    response.headers.set(
+                        'Content-Disposition', 'attachment', filename='summary.docx')
+                    return response
+
         elif return_type == 'png':
             html = render_template('base.html', data=result)
             with tempfile.NamedTemporaryFile(suffix='.png') as t:

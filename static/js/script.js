@@ -72,6 +72,12 @@ function handleResponse(response, returnType) {
         } else if (returnType == 'html'){
             document.getElementById("error_output").innerHTML = ""
             document.getElementById("output_div").innerHTML = response.responseText
+        } else if (returnType == 'docx') {
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,'
+            var fileObj = new File([response.response], "summary.docx", {type: mimetype});
+            var objectURL = window.URL.createObjectURL(fileObj);
+            debugger
+            window.URL.revokeObjectURL(objectURL);
         } else {
             //debugger;
             document.getElementById("error_output").innerHTML = ""

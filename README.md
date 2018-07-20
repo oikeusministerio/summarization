@@ -71,9 +71,8 @@ Start dependency parser before running tests
 docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
 ```
 ```
-python -m unittest extractive_summary/summary/Test*
-python -m unittest extractive_summary/TestDocumentParser.py
-python -m unittest extractive_summary/TestSummarizer.py
+python -m unittest extractive_summary/summary_methods/test_summary_methods.py
+python -m unittest extractive_summary/test_extractives.py
 python -m unittest testServer.py
 ```
 
