@@ -20,4 +20,5 @@ class SummaryWriter:
                 document.add_heading(title, level=2)
                 document.add_paragraph(sections[title]['summary'])
 
+
         document.save(destination_path)

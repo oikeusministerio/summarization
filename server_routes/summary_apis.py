@@ -1,5 +1,5 @@
 
-from flask import request, render_template, make_response
+from flask import request, render_template, make_response, send_file, Response
 from flask.views import MethodView
 import json
 from server_routes.helpers import create_configured_summarizer, return_json
@@ -8,8 +8,42 @@ import imgkit
 import tempfile
 import base64
 
-
 from tools.exceptions import SummarySizeTooSmall, TextTooLong
+
+def custom_send_file(file, mimetype, name):
+    response = make_response(file)
+    response.headers.set('Content-Type', mimetype)
+    response.headers.set(
+        'Content-Disposition', 'attachment', filename=name)
+    return response
+
+def handle_response(return_type, result):
+    if return_type == 'json':
+        return return_json(json.dumps(result), 201)
+    elif return_type == 'html':
+        return render_template('multi_file_summary.html', data=result)
+    elif return_type == 'docx':
+        sw = SummaryWriter(result)
+        with tempfile.NamedTemporaryFile(suffix='.docx') as t:
+            sw.write_docx(t.name)
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            return send_file(
+                t.name,
+                mimetype=mimetype,
+                as_attachment=True,
+                attachment_filename='testi.docx'
+            )
+    elif return_type == 'png':
+        html = render_template('base.html', data=result)
+        with tempfile.NamedTemporaryFile(suffix='.png') as t:
+            imgkit.from_string(html, t.name, css='static/styles.css')
+            with open(t.name, 'rb') as image_binary:
+                image = base64.b64encode(image_binary.read())
+                mimetype = 'image/png'
+                return custom_send_file(image, mimetype, 'summary.png')
+    else:
+        raise ValueError(
+            'Given return type ' + str(return_type) + ' unknown. Please choose either json, html, docx or png.')
 
 class SummaryAPI(MethodView):
 
@@ -119,7 +153,6 @@ class SummaryFileAPI(MethodView):
             type: string
             required: true
             description: return summary in either json, html or png. Html and png will be formatted.
-
           201:
             description: Summary created
         """
@@ -138,7 +171,6 @@ class SummaryFileAPI(MethodView):
                 return return_json(json.dumps({'success': False, 'error': 'Please provide : ' + str(params)}), 404)
 
         method = request.args.get('method')
-        return_type = request.args.get('return_type')
         try:
             summary_length = int(request.args.get('summary_length'))
         except ValueError:
@@ -155,38 +187,7 @@ class SummaryFileAPI(MethodView):
         result['success'] = True
 
         return_type = request.args.get('return_type')
-        print(return_type)
-        if return_type == 'json':
-            return return_json(json.dumps(result), 201)
-        elif return_type == 'html':
-            return render_template('multi_file_summary.html', data=result)
-        elif return_type == 'docx':
-            with tempfile.NamedTemporaryFile(suffix='.docx') as t:
-                sw = SummaryWriter(result)
-                sw.write_docx(t.name)
-                with open(t.name, 'rb') as image_binary:
-                    image = base64.b64encode(image_binary.read())
-                    response = make_response(image)
-                    mimetype = ' application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                    response.headers.set('Content-Type', mimetype)
-                    response.headers.set(
-                        'Content-Disposition', 'attachment', filename='summary.docx')
-                    return response
-
-        elif return_type == 'png':
-            html = render_template('base.html', data=result)
-            with tempfile.NamedTemporaryFile(suffix='.png') as t:
-                imgkit.from_string(html, t.name, css='static/styles.css')
-                with open(t.name, 'rb') as image_binary:
-                    image = base64.b64encode(image_binary.read())
-                    response = make_response(image)
-                    response.headers.set('Content-Type', 'image/png')
-                    response.headers.set(
-                        'Content-Disposition', 'attachment', filename='summary.png')
-                    return response
-        else:
-            raise ValueError(
-                'Given return type ' + str(return_type) + ' unknown. Please choose either json, html or png.')
+        return handle_response(return_type, result)
 
 class SummaryDirectoryAPI(MethodView):
 
@@ -221,7 +222,6 @@ class SummaryDirectoryAPI(MethodView):
             type: string
             required: true
             description: return summary in either json, html or png. Html and png will be formatted.
-
           201:
             description: Summary created
         """
@@ -255,21 +255,4 @@ class SummaryDirectoryAPI(MethodView):
         all_summaries['filenames'] = filenames
 
         return_type = request.args.get('return_type')
-        print(return_type)
-        if return_type == 'json':
-            return return_json(json.dumps(all_summaries), 201)
-        elif return_type == 'html':
-            return render_template('multi_file_summary.html', data=all_summaries)
-        elif return_type == 'png':
-            html = render_template('base.html', data=all_summaries)
-            with tempfile.NamedTemporaryFile(suffix='.png') as t:
-                imgkit.from_string(html, t.name, css='static/styles.css')
-                with open(t.name, 'rb') as image_binary:
-                    image = base64.b64encode(image_binary.read())
-                    response = make_response(image)
-                    response.headers.set('Content-Type', 'image/png')
-                    response.headers.set(
-                        'Content-Disposition', 'attachment', filename='summary.png')
-                    return response
-        else:
-            raise ValueError('Given return type ' + str(return_type) + ' unknown. Please choose either json, html or png.')
+        return handle_response(return_type, all_summaries)

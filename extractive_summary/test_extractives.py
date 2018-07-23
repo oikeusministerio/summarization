@@ -211,6 +211,5 @@ class TestSummaryWriter(unittest.TestCase):
                 sw = SummaryWriter({'filenames':['seven_page.pdf'],'seven_page.pdf':summaries})
                 sw.write_docx(filename)
 
-
 if __name__ == '__main__':
     unittest.main()

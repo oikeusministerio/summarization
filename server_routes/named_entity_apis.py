@@ -16,7 +16,7 @@ class NamedEntityAPI(MethodView):
 
     def post(self):
         """
-        Create a summary for given text.
+        Finds named entities of given text.
         ---
         tags:
           - named entities
@@ -31,7 +31,9 @@ class NamedEntityAPI(MethodView):
                 content:
                   type: string
                   description: text content
-                summary_length:
+                return_type:
+                  type: string
+                  description: file type of created file
           201:
             description: Named entities extracted
         """
@@ -81,7 +83,7 @@ class NamedEntityDirectoryAPI(MethodView):
 
     def post(self):
         """
-        Create a summary for given text.
+        Finds named entities of given text.
         ---
         tags:
          - multipart/form-data
@@ -91,6 +93,11 @@ class NamedEntityDirectoryAPI(MethodView):
             type: file
             required: true
             description: the files to upload
+            - in: path
+            name: return_type
+            type: string
+            required: true
+            description: file type of created file
 
           201:
             description: Named entities extracted
@@ -148,7 +155,6 @@ class NamedEntityDirectoryAPI(MethodView):
                         return response
             else:
                 return render_template('named_entities.html', data=graph_data)
-                #return return_json(json.dumps({'success': True, 'names': names_found}), 200)
         except requests.exceptions.ConnectionError as e:
             msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
             return return_json(json.dumps({'success': False, 'names': [], 'error': msg}), 500)

@@ -74,12 +74,9 @@ function handleResponse(response, returnType) {
             document.getElementById("output_div").innerHTML = response.responseText
         } else if (returnType == 'docx') {
             mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document,'
-            var fileObj = new File([response.response], "summary.docx", {type: mimetype});
-            var objectURL = window.URL.createObjectURL(fileObj);
-            debugger
-            window.URL.revokeObjectURL(objectURL);
+            var fileObj = new File([response.response], 'tiivistelma.docx',  {type: mimetype})
+            saveAs(fileObj);
         } else {
-            //debugger;
             document.getElementById("error_output").innerHTML = ""
             document.getElementById("output_div").innerHTML = '<img src="data:image/png;base64,' + response.response + '" data-src="' + response.response + '"/>'
         }
@@ -106,6 +103,9 @@ function sendFiles(path, files, returnType) {
     }
 
     var xhr = new XMLHttpRequest();
+    if (returnType == 'docx') {
+        xhr.responseType = 'blob';
+    }
     xhr.open('POST', path, true);
 
     xhr.upload.onprogress = function(e) {
