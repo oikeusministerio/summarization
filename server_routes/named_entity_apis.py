@@ -1,9 +1,9 @@
-from flask import request, make_response, after_this_request
+from flask import request, make_response, after_this_request, render_template
 from flask.views import MethodView
 import json
 from server_routes.helpers import return_json
 from extractive_summary.NameExtractor import NameExtractor
-from extractive_summary.DocumentParser import DocumentParser
+from extractive_summary.parsing import DocumentParser
 import tempfile
 import requests
 import base64
@@ -16,7 +16,7 @@ class NamedEntityAPI(MethodView):
 
     def post(self):
         """
-        Create a summary for given text.
+        Finds named entities of given text.
         ---
         tags:
           - named entities
@@ -31,7 +31,9 @@ class NamedEntityAPI(MethodView):
                 content:
                   type: string
                   description: text content
-                summary_length:
+                return_type:
+                  type: string
+                  description: file type of created file
           201:
             description: Named entities extracted
         """
@@ -81,7 +83,7 @@ class NamedEntityDirectoryAPI(MethodView):
 
     def post(self):
         """
-        Create a summary for given text.
+        Finds named entities of given text.
         ---
         tags:
          - multipart/form-data
@@ -91,6 +93,11 @@ class NamedEntityDirectoryAPI(MethodView):
             type: file
             required: true
             description: the files to upload
+            - in: path
+            name: return_type
+            type: string
+            required: true
+            description: file type of created file
 
           201:
             description: Named entities extracted
@@ -111,6 +118,8 @@ class NamedEntityDirectoryAPI(MethodView):
                 text = parser.read_docx_document()
             elif '.txt' in file.filename:
                 text = parser.read_txt_document()
+            elif '.pdf' in file.filename:
+                text = parser.read_pdf_document()
             else:
                 continue; # cannot handle this type of file
                 
@@ -119,11 +128,12 @@ class NamedEntityDirectoryAPI(MethodView):
 
         try:
             results = self.name_extractor.extract_names_directory(file_contents, filenames)
+            graph_data = {}
+            for i, filename in enumerate(filenames):
+                graph_data[filename] = results[i]
+            graph_data['filenames'] = filenames
+
             if return_type == 'png':
-                graph_data = {}
-                for i, filename in enumerate(filenames):
-                    graph_data[filename] = results[i]
-                graph_data['filenames'] = filenames
                 with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
                     image_file = self.name_extractor.create_graph(tmp_file.name, graph_data)
 
@@ -144,7 +154,7 @@ class NamedEntityDirectoryAPI(MethodView):
                             'Content-Disposition', 'attachment', filename='named_entity_graph.png')
                         return response
             else:
-                return return_json(json.dumps({'success': False, 'names': [], 'error': 'Return type not implemented.'}), 404)
+                return render_template('named_entities.html', data=graph_data)
         except requests.exceptions.ConnectionError as e:
             msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
             return return_json(json.dumps({'success': False, 'names': [], 'error': msg}), 500)

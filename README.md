@@ -24,7 +24,11 @@ For graph visualisations, please install Graphviz
 ```bash
 sudo apt install python-pydot python-pydot-ng graphviz
 ```
-
+PDF reading modules requires installing following packages
+```bash
+sudo apt-get install python-dev libxml2-dev libxslt1-dev antiword unrtf poppler-utils pstotext tesseract-ocr \
+flac ffmpeg lame libmad0 libsox-fmt-mp3 sox libjpeg-dev swig libpulse-dev
+```
 
 ## Judgments
 
@@ -67,9 +71,8 @@ Start dependency parser before running tests
 docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
 ```
 ```
-python -m unittest extractive_summary/summary/Test*
-python -m unittest extractive_summary/TestDocumentParser.py
-python -m unittest extractive_summary/TestSummarizer.py
+python -m unittest extractive_summary/summary_methods/test_summary_methods.py
+python -m unittest extractive_summary/test_extractives.py
 python -m unittest testServer.py
 ```
 

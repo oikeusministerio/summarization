@@ -68,8 +68,7 @@ class TestEmbeddingsBasedSummary(unittest.TestCase):
         summarization = EmbeddingsBasedSummary(text, dictionary=dictionary)
         summarization.distance_index_mapping = distance_index_mapping
         summarization.distances = distances
-        dist, lengths = summarization.precalcule_sentence_distances(sentences)
-        self.assertTrue((lengths == np.array([len(sentences[0]), len(sentences[1])])).all())
+        dist = summarization.precalcule_sentence_distances(sentences)
         self.assertTrue((dist == np.array([-3.6, -3.1])).all())
 
     def test_modified_greedy_algo(self):
@@ -78,7 +77,8 @@ class TestEmbeddingsBasedSummary(unittest.TestCase):
         self.assertIsNotNone(data)
         text = data.iloc[0]['text']
         summarizer = EmbeddingsBasedSummary(text, dictionary_file="embeddings/data/dictionary.npy")
-        sentences, _, nearest_words = summarizer.modified_greedy_algrorithm(500)
+        summarizer.calculate_sentence_lengths()
+        sentences, _, nearest_words = summarizer.modified_greedy_algrorithm(200)
         summary = " ".join(sentences).lower()
         only_alphabet = re.compile('^[A-z]+$')
         for word in np.unique(nearest_words):
@@ -106,8 +106,8 @@ def get_text(i):
 class TestGraphBasedSummary(unittest.TestCase):
 
     def test_summarization(self):
-        for text in [get_text(4), get_text(5)]:
-            for words in [100,200,500]:
+        for text in [get_text(3), get_text(6)]:
+            for words in [100,200,300]:
                 summarizer = GraphBasedSummary(text)
                 sentences, _ = summarizer.summarize(word_count=words)
                 summary = " ".join(sentences)

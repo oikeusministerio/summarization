@@ -3,7 +3,7 @@ import pandas as pd
 
 from extractive_summary.summary_methods.graphbased import GraphBasedSummary
 from extractive_summary.summary_methods.embedding import EmbeddingsBasedSummary
-from extractive_summary.DocumentParser import DocumentParser
+from extractive_summary.parsing import DocumentParser
 from tools.exceptions import SummarySizeTooSmall
 
 from dask import delayed, compute
@@ -58,9 +58,11 @@ class Summarizer:
     def summary_from_file(self, file, method, summary_length):
         parser = DocumentParser(file)
         if '.docx' in file.filename:
-            parsed_document, titles = parser.parse_docx()
+            parsed_document, titles = parser.parse_docx_file()
         elif '.txt' in file.filename:
-            parsed_document, titles = parser.parse_txt()
+            parsed_document, titles = parser.parse_txt_file()
+        elif '.pdf' in file.filename:
+            parsed_document, titles = parser.parse_pdf_file()
         else:
             raise ValueError('File extension not supported.')
 

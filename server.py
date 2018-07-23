@@ -37,6 +37,10 @@ app.add_url_rule('/entities/directory', view_func=named_entities_dir_view, metho
 def send_js(path):
     return send_from_directory('static/js', path)
 
+@app.route('/node_modules/<path:path>')
+def send_node_modules(path):
+    return send_from_directory('static/node_modules', path)
+
 @app.route('/')
 def root():
     return app.send_static_file('index.html')

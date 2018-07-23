@@ -165,10 +165,14 @@ class EmbeddingsBasedSummary:
         nearest_words = np.vectorize(get_word)(nearest_neighbors)
         return sentences, positions, nearest_words
 
-    def summarize(self, word_count = 100,return_words=False):
+    def calculate_sentence_lengths(self):
         lengths = self.sentences['sentences'].apply(self.word_counter)
         lengths = np.maximum(lengths, np.ones(lengths.shape[0], dtype=int))
         self.sentences['lengths'] = lengths
+
+    def summarize(self, word_count = 100,return_words=False):
+        self.calculate_sentence_lengths()
+        lengths = self.sentences['lengths']
         if (lengths > word_count).all():
             raise SummarySizeTooSmall("None of sentences is shorter than given length, cannot choose any sentences.")
 

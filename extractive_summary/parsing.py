@@ -5,7 +5,9 @@ from nltk import sent_tokenize
 import pandas as pd
 import re
 from tools.tools import sentence_tokenize
-
+import textract
+from tempfile import NamedTemporaryFile
+import os
 
 def count_sentences_left(sections):
     sections_df = pd.Series(np.array(sections))
@@ -43,7 +45,7 @@ class DocumentParser:
         self.file = file
         self.body_text_styles = ['Body Text','Normal']
 
-    def parse_docx(self):
+    def parse_docx_file(self):
         """
         The following is supposed when parsing :
         1) if there are titles in the text, the text will start with a title and will never end with one
@@ -77,7 +79,7 @@ class DocumentParser:
         """
         return ' '.join([paragraph.text for paragraph  in Document(self.file).paragraphs])
 
-    def parse_txt(self, section_min_sentence=50, sections_max_length=175):
+    def parse_txt(self, text, section_min_sentence=50, sections_max_length=175):
         """
         File is splitted by two newlines, that might have spaces between them.
 
@@ -86,12 +88,11 @@ class DocumentParser:
         :param section_min_sentence:
         :return: parsed txt file
         """
-        self.text = self.file.read().decode('utf8')
-        sents = [s for s in sentence_tokenize(self.text) if len(s) > 2]
+        sents = [s for s in sentence_tokenize(text) if len(s) > 2]
         total_sents = len(sents)
-        if total_sents < section_min_sentence: # all text will fit in one section
+        if total_sents < section_min_sentence:  # all text will fit in one section
             parsed_document = {}
-            modified_text = self.text.replace('\n', '.').replace('..','.')
+            modified_text = self.text.replace('\n', '.').replace('..', '.')
             # do tokenizing again to verify, that title contains no newlines
             sents = [s for s in sentence_tokenize(modified_text) if len(s) > 2]
             title = sents[0]
@@ -99,7 +100,7 @@ class DocumentParser:
             return parsed_document, [title]
 
         rx_seq = re.compile(DocumentParser.txt_section_split_by)
-        sections = rx_seq.split(str(self.text))
+        sections = rx_seq.split(str(text))
         sections = [s for s in sections if len(s.strip()) > 2]
         sections_N = len(sections)
         parsed_document = {}
@@ -107,15 +108,15 @@ class DocumentParser:
         titles = []
 
         is_heading = lambda x: len(sentence_tokenize(x)) == 1
-        for i, section in enumerate(sections[:-1]): # last one cannot be heading
+        for i, section in enumerate(sections[:-1]):  # last one cannot be heading
             if is_heading(section):
-                headings_candidates.append((i,section.strip()))
+                headings_candidates.append((i, section.strip()))
 
         sents_lengths, sents_left = count_sentences_left(sections)
 
-        if len(headings_candidates) == 0: # take first sentence as a title
+        if len(headings_candidates) == 0:  # take first sentence as a title
             current_section = ''
-            for i,section in enumerate(sections):
+            for i, section in enumerate(sections):
                 current_section += section
                 section_sents = sentence_tokenize(current_section)
                 if len(section_sents) >= 2:
@@ -128,13 +129,14 @@ class DocumentParser:
 
         last_section_used = -1
         for heading_i, item in enumerate(headings_candidates):
-            i,_ = item
+            i, _ = item
             if i < last_section_used:
                 continue
             j = 1
             section = sections[i + j]
             section_sents = sents_lengths[i + j]
-            if i + j + 1 < sections_N and sents_left[i + j + 1] < section_min_sentence: # this means there are not enough characters/sentences to make full section.
+            if i + j + 1 < sections_N and sents_left[
+                i + j + 1] < section_min_sentence:  # this means there are not enough characters/sentences to make full section.
                 while i + j + 2 < sections_N:
                     j += 1
                     section += sections[i + j]
@@ -144,7 +146,6 @@ class DocumentParser:
                     j += 1
                     section += sections[i + j]
                     section_sents += sents_lengths[i + j]
-
 
             title = sections[i].strip()
             if title in parsed_document:
@@ -157,12 +158,68 @@ class DocumentParser:
             last_section_used += 1
             parsed_document[titles[-1]] += sections[last_section_used]
 
-        parsed_document, titles = split_too_long_sections(parsed_document,titles,sections_max_length,section_min_sentence)
+        parsed_document, titles = split_too_long_sections(parsed_document, titles, sections_max_length,
+                                                          section_min_sentence)
 
         return parsed_document, titles
+
+    def parse_txt_file(self, section_min_sentence=50, sections_max_length=175):
+        """
+        File is splitted by two newlines, that might have spaces between them.
+
+        :param length_by: either by sentence count or character count
+        :param section_min_length:
+        :param section_min_sentence:
+        :return: parsed txt file
+        """
+        self.text = self.file.read().decode('utf8')
+        return self.parse_txt(self.text, section_min_sentence=section_min_sentence,sections_max_length=sections_max_length)
 
     def paragraph_count(self):
         return len(self.document.paragraphs)
 
     def read_txt_document(self):
         return self.file.read().decode('utf8')
+
+    def read_pdf_document(self):
+        with NamedTemporaryFile(suffix='.pdf') as tmp_file:
+            filename = tmp_file.name
+
+            self.file.save(filename)
+            raw_text = textract.process(filename, layout=True)
+            text_without_pagebreaks = raw_text.replace(b'\x0c', b' ')
+
+            text = text_without_pagebreaks.decode('utf-8')
+            callback = lambda pat: pat.group(0)[0] + ' ' + pat.group(0)[2]
+            text = re.sub('[\w,\.-]\\n\w', callback, text)
+
+
+            return text
+
+    def parse_pdf_file(self, section_min_sentence=50, sections_max_length=175):
+        text = self.read_pdf_document()
+        rx_seq = re.compile(DocumentParser.txt_section_split_by)
+        sections = rx_seq.split(str(text))
+        sections = [s for s in sections if len(s) > 0]
+
+        titles = []
+        parsed_document = {}
+        i = 0
+        while i < len(sections):
+            section = sections[i]
+            title = [l for l in section.splitlines() if len(l) > 1][0]
+            rest = section[len(title):]
+            title = title.strip()
+            if len(rest) < len(title): # title should be shorter than other section
+                rest = rest + ' ' + sections[i + 1]
+                i += 1
+            parsed_document[title] = rest
+            titles.append(title)
+            i += 1
+
+        #import pdb
+        #pdb.set_trace()
+        parsed_document['titles'] = titles
+        parsed_document, titles = split_too_long_sections(parsed_document, titles, sections_max_length,
+                                                          section_min_sentence)
+        return parsed_document, titles
