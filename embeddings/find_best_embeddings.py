@@ -84,6 +84,6 @@ def iterate_all_params(params):
         results.append(evaluate(embed_filename, dico_filename))
         print(results)
 
-#iterate_all_params(params)
+iterate_all_params(params)
 #e,d =learn_embeddings(params4)
-print(evaluate("data/embeddings.npy","data/dictionary.npy"))
+#print(evaluate("data/embeddings.npy","data/dictionary.npy"))

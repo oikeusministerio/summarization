@@ -41,6 +41,25 @@ def load_data(dir_path, N=-1):
 
     return pd.DataFrame(data, columns = ["id","text"])
 
+def load_multiple_data_sources(dir_paths):
+    """
+    Reads the data files from given paths
+    :param dir_path path to files:
+    :return: dask.DataFrame with data
+    """
+    data = []
+    for dir_path in dir_paths:
+        files = os.listdir(dir_path)
+        for i, filename in enumerate(files):
+            if filename.endswith(".txt"):
+                path = os.path.join(dir_path, filename)
+                with open(path) as f:
+                    text = f.read()
+                data.append((filename[:-4], text))
+
+    df = pd.DataFrame(data, columns = ["id","text"])
+    return df ##dd.from_pandas(df, npartitions=2)
+
 def is_number(s):
     try:
         float(s)

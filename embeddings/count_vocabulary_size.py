@@ -9,7 +9,7 @@ from nltk import word_tokenize
 import sys
 import os
 sys.path.append(os.path.abspath('../'))
-from summarization.tools.tools import load_data
+from summarization.tools.tools import load_data, load_multiple_data_sources
 from sklearn.feature_extraction.text import CountVectorizer
 
 assert len(sys.argv) > 1, "please give a path where to save file"
@@ -17,8 +17,8 @@ assert len(sys.argv) > 1, "please give a path where to save file"
 destination_path = sys.argv[1]
 assert os.path.isdir(os.path.split(destination_path)[0]), "Not exists"
 
-
-texts = load_data('judgements/data', N=-1)
+source_paths = ['judgments/data/', 'embeddings/source_data/']
+texts = load_multiple_data_sources(source_paths)
 lower_case_texts = texts['text'].apply(lambda text: text.lower())
 
 vectorizer = CountVectorizer(min_df=5)
@@ -60,9 +60,9 @@ totals = results[:, 1]
 
 plt.plot(range(len(totals)), totals)
 plt.title("Uniikkien sanojen määrä \n")
-plt.xlabel("Päätöksien määrä")
+plt.xlabel("Tiedostojen määrä")
 plt.ylabel("Sanojen määrä")
-plt.savefig(destination_path)
+plt.savefig(destination_path or 'unique_words.png')
 
 
 # In[ ]:
