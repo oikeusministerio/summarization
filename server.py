@@ -61,6 +61,14 @@ def log_request_info():
     app.logger.debug('Headers: %s', request.headers)
     app.logger.debug('Body: %s', request.get_data())
 
+@app.after_request # blueprint can also be app~~
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+#    header['Access-Control-Allow-Methods'] = 'POST, GET'
+    header['Access-Control-Allow-Headers'] = '*'
+    return response
+
 if __name__ == '__main__':
     app.run(debug=False,host='0.0.0.0')
 

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  dependency_parser:
+    image: "kazhar/finnish-dep-parser"
+    ports:
+     - "9876:9876"
+  summarization_app:
+    build: .
+    ports:
+     - "5000:5000"
+    environment:
+    - FLASK_ENV=production

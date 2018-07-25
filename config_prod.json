@@ -1,0 +1,5 @@
+{
+  "dictionary_file": "embeddings/data/dictionary.npy",
+  "embeddings_file": "embeddings/data/embeddings.npy",
+  "dependency_parser_url": "http://dependency_parser:9876"
+}

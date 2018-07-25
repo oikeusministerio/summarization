@@ -79,6 +79,8 @@ python3 abstractive_summary/summarize.py -source_dir judgments/test_data/ -embed
 
 ## Start server:
 
+### Server locally:
+
 Start dependency parser
 ```bash
 docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
@@ -99,6 +101,12 @@ or visit http:localhost:5000 with browser.
 To send text file for summarization, use
 ```
 curl -v -F file=@testi.docx 'http://localhost:5000/summarize/file?summary_length=10&method=graph&return_type=json'
+```
+
+### Start server with docker-compose
+
+```
+docker-compose up --build
 ```
 
 ## Run tests

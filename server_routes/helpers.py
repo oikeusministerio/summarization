@@ -2,8 +2,7 @@
 import json
 import os
 import sys
-sys.path.append(os.path.abspath("../"))
-from summarization.extractive_summary.Summarizer import Summarizer
+from extractive_summary.Summarizer import Summarizer
 
 def create_configured_summarizer():
     with open('config.json', 'r') as f:

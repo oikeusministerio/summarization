@@ -10,8 +10,9 @@ python-docx
 Flask-Testing
 timeout-decorator
 gensim
-"dask[dataframe]"
-"dask[distributed]"
+dask[dataframe]
+dask[distributed]
 imgkit
 graphviz
 textract
+matplotlib
