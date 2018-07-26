@@ -10,7 +10,7 @@ import timeout_decorator
 import imghdr
 import tempfile
 
-from server import get_app
+from summary_api import get_app
 
 def post_text(client, text,summary_length,method):
     response = client.post('/summarize',

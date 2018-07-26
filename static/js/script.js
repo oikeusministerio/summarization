@@ -67,6 +67,7 @@ function handleResponse(response, returnType) {
     document.getElementById("submit_button_named_entity").disabled = false;
     if(response.status == 200 || response.status == 201) {
         if (returnType == 'json') {
+        // TODO handle ners also
             var data = JSON.parse(response.responseText);
             showMultiSectionSummary(data);
         } else if (returnType == 'html'){
@@ -93,13 +94,9 @@ function sendFiles(path, files, returnType) {
         return;
     }
     var fd = new FormData();
-    if (files.length > 1) {
-        for (var i = 0; i < files.length; i++) {
-            var file = files[i]
-            fd.append("file-"+i, file);
-        }
-    } else {
-        fd.append("file", files[0]);
+    for (var i = 0; i < files.length; i++) {
+        var file = files[i]
+        fd.append("file-"+i, file);
     }
 
     var xhr = new XMLHttpRequest();
@@ -145,19 +142,6 @@ function send(e) {
         var path =  server_base_path + '/summarize/directory?summary_length='+summaryLength
                                     + "&method=" +method + "&return_type="+returnType
         sendFiles(path,files, returnType) //json
-    } else {
-        var fileId = "single_file"
-        var lengthId = "single_summary_length"
-        var summaryLength = document.getElementById(lengthId).value
-        var files = document.getElementById(fileId).files
-        if( document.getElementById(fileId).files.length == 0 ){
-            showError("Anna tiedosto tai syötä teksti.");
-            document.getElementById("submit_button").disabled = false;
-        } else {
-             var path =  server_base_path + '/summarize/file?summary_length='+summaryLength
-                                    + "&method=" +method + "&return_type="+returnType
-            sendFiles(path,files,returnType)
-        }
     }
 }
 
@@ -176,7 +160,7 @@ function sendForNer(e) {
     if (inputMode == "copy_paste_input") {
         sendTextNER('/entities', returnType)
     } else {
-        var fileId = (inputMode == "directory_input") ? "multiple_files" : "single_file"
+        var fileId = "multiple_files"
         var files = document.getElementById(fileId).files
         var path =  server_base_path + '/entities/directory?return_type=' + returnType
         sendFiles(path, files, returnType)
@@ -239,17 +223,11 @@ function setup() {
 }
 
 function toggleTextInputField(e) {
-    if(e.value == "single_file_upload_input") {
-        document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("single_file_upload_input").style.display = "block";
-        document.getElementById("directory_input").style.display = "none";
-    } else if (e.value == "copy_paste_input") {
+    if (e.value == "copy_paste_input") {
         document.getElementById("copy_paste_input").style.display = "block";
-        document.getElementById("single_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "none";
     } else {
         document.getElementById("copy_paste_input").style.display = "none";
-        document.getElementById("single_file_upload_input").style.display = "none";
         document.getElementById("directory_input").style.display = "block";
     }
 }

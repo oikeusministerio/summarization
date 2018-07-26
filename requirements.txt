@@ -5,7 +5,9 @@ scipy
 scikit-learn
 nltk
 Flask
+flask_restful
 flask-swagger
+flask-restplus
 python-docx
 Flask-Testing
 timeout-decorator
