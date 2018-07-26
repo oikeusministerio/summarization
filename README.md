@@ -86,22 +86,16 @@ Start dependency parser
 docker run -it --rm -p 0.0.0.0:9876:9876 kazhar/finnish-dep-parser
 ```
 If you want to use other address than 0.0.0.0:9876, please modify the new port to config.json.
-Then start server.
+Then start api server.
 ```
-python3 server.py
+python3 restful_api.py
 ```
+Open new terminal and start frontend server.
 
-when server running, post a text to summarize: 
-```
-curl --h-Type: application/json" --request POST --data '{"content":"put text here.", "summary_length":10, "method":"embedding", "return_justification":"False"}' http://localhost:5000/summarize
-```
-
-or visit http:localhost:5000 with browser.
-
-To send text file for summarization, use
-```
-curl -v -F file=@testi.docx 'http://localhost:5000/summarize/file?summary_length=10&method=graph&return_type=json'
-```
+```bash
+python3 frontend_server.py
+``` 
+You can go localhost:5000 to access Swagger-UI or localhost:7000 to acces the user interface.
 
 ### Start server with docker-compose
 

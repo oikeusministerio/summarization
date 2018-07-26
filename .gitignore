@@ -16,3 +16,4 @@ judgments/test_data/*
 *.gv
 *.gv.pdf
 embeddings/source_data/*
+nohup.out

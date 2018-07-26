@@ -10,7 +10,7 @@ import timeout_decorator
 import imghdr
 import tempfile
 
-from summary_api import get_app
+from restful_api import get_app
 
 def post_text(client, text,summary_length,method):
     response = client.post('/summarize',
@@ -81,21 +81,19 @@ class TestServer(TestCase):
         filenames = ["testi.docx", "testi3.docx"]
         for summary_length in summary_lengths:
             for method in methods:
-                for filename in filenames:
-                    print(summary_length)
-                    print(method)
-                    print(filename)
-                    response_json = post_file(self.client, filename, summary_length, method, 'json')
-                    self.assertTrue(response_json['success'])
-                    self.assertTrue('filenames' in response_json )
-                    for fn in response_json['filenames']:
-                        file_summary = response_json[fn]
-                        self.assertTrue('titles' in file_summary)
-                        for title in file_summary['titles']:
-                            summary = file_summary[title]['summary']
-                            if len(summary) > 0:
-                                first_word = summary.split(' ')[0]
-                                self.assertTrue(first_word in summary)
+                print(summary_length)
+                print(method)
+                response_json = post_multiple_files(self.client, filenames, summary_length, method, 'json')
+                self.assertTrue(response_json['success'])
+                self.assertTrue('filenames' in response_json )
+                for fn in response_json['filenames']:
+                    file_summary = response_json[fn]
+                    self.assertTrue('titles' in file_summary)
+                    for title in file_summary['titles']:
+                        summary = file_summary[title]['summary']
+                        if len(summary) > 0:
+                            first_word = summary.split(' ')[0]
+                            self.assertTrue(first_word in summary)
 
     def test_summarization_with_txt(self):
         summary_lengths = [50, 100,200]
@@ -103,21 +101,19 @@ class TestServer(TestCase):
         filenames = ["normal_text.txt"]
         for summary_length in summary_lengths:
             for method in methods:
-                for filename in filenames:
-                    print(summary_length)
-                    print(method)
-                    print(filename)
-                    response_json = post_file(self.client, filename, summary_length, method, 'json')
-                    self.assertTrue(response_json['success'])
-                    self.assertTrue('filenames' in response_json)
-                    for fn in response_json['filenames']:
-                        file_summary = response_json[fn]
-                        self.assertTrue('titles' in file_summary)
-                        for title in file_summary['titles']:
-                            summary = file_summary[title]['summary']
-                            if len(summary) > 0:
-                                first_word = summary.split(' ')[0]
-                                self.assertTrue(first_word in summary)
+                print(summary_length)
+                print(method)
+                response_json = post_multiple_files(self.client, filenames, summary_length, method, 'json')
+                self.assertTrue(response_json['success'])
+                self.assertTrue('filenames' in response_json)
+                for fn in response_json['filenames']:
+                    file_summary = response_json[fn]
+                    self.assertTrue('titles' in file_summary)
+                    for title in file_summary['titles']:
+                        summary = file_summary[title]['summary']
+                        if len(summary) > 0:
+                            first_word = summary.split(' ')[0]
+                            self.assertTrue(first_word in summary)
 
     def test_multifile_summarization_json(self):
         filesnames = ['normal_text.txt', 'average_sized_text.txt']

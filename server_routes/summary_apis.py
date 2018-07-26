@@ -14,9 +14,9 @@ from tools.exceptions import SummarySizeTooSmall, TextTooLong
 def configure_summarize_paths(api, ns):
     #'content','summary_length','method'
     copy_paste_summary = api.model('Summarize', {
-        'content': fields.String(required=True, description=''),
-        'summary_length': fields.Integer(required=True, description=''),
-        'method': fields.String(required=True, description=''),
+        'content': fields.String(required=True, description='Text to summarize.'),
+        'summary_length': fields.Integer(required=True, description='Summary length should be integer.'),
+        'method': fields.String(required=True, description='', choices=('graph', 'embedding')),
     })
     @ns.route('', methods=["post"])
     @ns.response(404, 'summary not found')
@@ -45,7 +45,7 @@ def configure_summarize_paths(api, ns):
 
     multi_file_parser = reqparse.RequestParser(bundle_errors=True)
     multi_file_parser.add_argument('summary_length',  type=int, help='Summary length should be integer.', required=True, location='args')
-    multi_file_parser.add_argument('method', type=str, choices=('graph', 'embed'), help="What method to use to summarize, either 'graph' or 'embed'", required=True, location='args')
+    multi_file_parser.add_argument('method', type=str, choices=('graph', 'embedding'), help="What method to use to summarize, either 'graph' or 'embed'", required=True, location='args')
     multi_file_parser.add_argument('file-0', type=FileStorage, location='files', help="At least one file containing text to handle.", required=True)
     multi_file_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.", required=True, location='args')
 
