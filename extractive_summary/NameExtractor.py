@@ -2,6 +2,7 @@
 import json
 import requests
 from tools.conll_to_df import conll_df
+from tools.tools import get_config
 import numpy as np
 import re
 from graphviz import Digraph
@@ -33,9 +34,8 @@ class NameExtractor:
     """
 
     def __init__(self):
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-            self.dependency_parser_url = config['dependency_parser_url'] # "http://127.0.0.1:9876"
+        config = get_config()
+        self.dependency_parser_url = config['dependency_parser_url'] # "http://127.0.0.1:9876"
         self.ending_special_char = re.compile('.*[;:\.]$')
         self.contains_special_char = re.compile('.*[;:\.].*')
         self.number_mask = re.compile('.*\d.*')

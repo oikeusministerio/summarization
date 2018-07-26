@@ -33,6 +33,7 @@ class VisualisationEmbeddingAPI(MethodView):
             type: list or array
             required: true
             description: nearest neighbors of each word in words array
+        responses:
           201:
             description: Summary created
         """

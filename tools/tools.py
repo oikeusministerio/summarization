@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import re
+import json
 from nltk import sent_tokenize
 import dask.dataframe as dd
 
@@ -92,3 +93,10 @@ def sentence_tokenize(text):
     callback = lambda pat: pat.group(0)[:-1] + '. '
     text = re.sub(r'([A-Z][ ]*)+\n', callback, text) # add . in the end of uppercase words.
     return sent_tokenize(text, language="finnish")
+
+
+def get_config():
+    config_file = 'config_prod.json' if os.getenv('FLASK_ENV') == 'production' else 'config.json'
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+    return config
