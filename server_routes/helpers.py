@@ -16,8 +16,6 @@ def create_configured_summarizer():
 def return_json(dumped_json, code):
     return dumped_json, code, {'ContentType': 'application/json'}
 
-
-
 def custom_send_file(file, mimetype, name):
     response = make_response(file)
     response.headers.set('Content-Type', mimetype)

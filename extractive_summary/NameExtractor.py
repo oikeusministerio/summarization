@@ -110,7 +110,9 @@ class NameExtractor:
                     names.update([' '.join(ner)])
                     ner = []
         del names[''];
-        unique_names = skip_allmost_duplicates(list(names.keys()))
+        unique_names = list(names.keys())
+        #unique_names = skip_allmost_duplicates(list(names.keys()))
+        unique_names = [n for n in  unique_names if len(n) > 1]
         return unique_names, [names[n] for n in unique_names]
 
     def create_graph(self, destination_file, graph_data, image_format = 'png'):

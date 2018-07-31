@@ -1,9 +1,10 @@
-from flask import request, make_response, after_this_request, render_template
+from flask import request, make_response, after_this_request, send_file
 from flask.views import MethodView
 import json
 from server_routes.helpers import return_json
 from extractive_summary.NameExtractor import NameExtractor
-from extractive_summary.parsing import DocumentParser
+from extractive_summary.parsing import DocumentParser, replace_words_in_txt
+from extractive_summary.output import SummaryWriter
 from flask_restplus import Api, Resource, fields
 from flask_restful import reqparse
 
@@ -128,7 +129,63 @@ def configure_named_entities_paths(api, ns):
                                 'Content-Disposition', 'attachment', filename='named_entity_graph.png')
                             return response
                 else:
-                    return return_json({'success': True, 'names': results}, 200)
+                    return return_json({'success': True, 'names': graph_data}, 200)
             except requests.exceptions.ConnectionError as e:
                 msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
                 return return_json({'success': False, 'names': [], 'error': msg}, 500)
+
+
+
+    replace_parser = reqparse.RequestParser(bundle_errors=True)
+    replace_parser.add_argument('file-0', type=str, help='At least one file with text to replace.',
+                                 required=True, location='files')
+    replace_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
+                                 required=True, location='args')
+    replace_parser.add_argument('nerlist', type=str, help="Words that should be replaced.",required=True, location='args')
+    replace_parser.add_argument('substitutes', type=str, help="What words to use when replacing..", required=True,
+                                location='args')
+    @ns.doc(params={arg.name: arg.help for arg in replace_parser.args})
+    @ns.route('/replace', methods=["post"])
+    @ns.response(404, 'ner not found')
+    class ReplaceWordsAPI(Resource):
+
+        @ns.doc('replace_ners')
+        @ns.expect(replace_parser)
+        def post(self):
+            args = replace_parser.parse_args()
+            word_list = args['nerlist']
+            word_list =  [w[1:-1].strip() for w in word_list[1:-1].split(',')]
+
+            substitutes = args['substitutes']
+            substitutes = [w[1:-1].strip() for w in substitutes[1:-1].split(',')]
+
+            return_type = args['return_type']
+            #file_id = request.files[0]
+            file = request.files['file-0']
+            parser = DocumentParser(file)
+            if '.docx' in file.filename:
+                parsed_document, titles = parser.parse_docx_file()
+            elif '.txt' in file.filename:
+                parsed_document, titles = parser.parse_txt_file()
+            elif '.pdf' in file.filename:
+                parsed_document, titles = parser.parse_pdf_file()
+
+            replaced_parsed = replace_words_in_txt(parsed_document, titles, word_list, substitutes)
+            replaced_parsed['titles'] = titles
+
+            output = {}
+            output['output.docx'] = replaced_parsed
+            output['filenames'] = ['output.docx']
+            with tempfile.NamedTemporaryFile(suffix='.docx') as t:
+                writer = SummaryWriter(output)
+                writer.write_docx(t.name)
+
+                mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                return send_file(
+                    t.name,
+                    mimetype=mimetype,
+                    as_attachment=True,
+                    attachment_filename='testi.docx'
+                )
+
+
