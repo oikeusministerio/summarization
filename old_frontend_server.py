@@ -1,13 +1,10 @@
 
 from flask import Flask, jsonify,request, send_from_directory, send_file
 import logging
-import json
-import os
 
 #inner imports
-from server_routes.helpers import return_json
 
-app = Flask(__name__, static_folder='dist', static_url_path='')
+app = Flask(__name__, static_url_path='')
 
 UPLOAD_FOLDER = '/tmp/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -15,19 +12,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/js/<path:path>')
 def send_js(path):
-    return send_from_directory('dist/js', path)
+    return send_from_directory('static/js', path)
+
+@app.route('/node_modules/<path:path>')
+def send_node_modules(path):
+    return send_from_directory('static/node_modules', path)
 
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
-
-@app.route('/config')
-def config():
-    conf = {'apiurl': 'http://127.0.0.1:5000'}
-    if 'APIURL' in os.environ:
-        conf['apiurl'] = os.environ['APIURL']
-    return return_json(json.dumps(conf), 200)
-
 
 @app.before_first_request
 def setup_logging():
