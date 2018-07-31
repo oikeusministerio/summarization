@@ -35,6 +35,21 @@ def split_too_long_sections(parsed_document, titles, sections_max_length, sectio
                 last = int(optimal*i)
     return parsed_document, titles
 
+def replace_words_in_txt(parsed_document, titles, word_list, substitutes):
+    """
+    Replaces all occurances of words in text.
+    :param word_list: list of all words to be replaced
+    :param substitute: what to put instead of word in list
+    :return:
+    """
+    replaced_document = {}
+    for title in titles:
+        replaced_document[title] = {}
+        replaced_document[title]['summary'] = parsed_document[title]
+        for i, w in enumerate(word_list):
+            replaced_document[title]['summary'] = replaced_document[title]['summary'].replace(w, substitutes[i])
+    return replaced_document
+
 
 class DocumentParser:
 
@@ -192,7 +207,6 @@ class DocumentParser:
             text = text_without_pagebreaks.decode('utf-8')
             callback = lambda pat: pat.group(0)[0] + ' ' + pat.group(0)[2]
             text = re.sub('[\w,\.-]\\n\w', callback, text)
-
 
             return text
 
