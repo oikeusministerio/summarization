@@ -4,7 +4,7 @@ from .parsing import DocumentParser, count_sentences_left, split_too_long_sectio
 from nltk import sent_tokenize
 from werkzeug.datastructures import FileStorage
 
-from .NameExtractor import NameExtractor
+from .ner_extracting import NameExtractor
 from .Summarizer import Summarizer, ParallelSummary
 from .output import SummaryWriter
 
@@ -210,6 +210,18 @@ class TestSummaryWriter(unittest.TestCase):
                 filename = dest_file.name
                 sw = SummaryWriter({'filenames':['seven_page.pdf'],'seven_page.pdf':summaries})
                 sw.write_docx(filename)
+
+    def test_write_txt(self):
+        dirname, _ = os.path.split(os.path.abspath(__file__))
+        with open(dirname + '/test_files/seven_page.pdf', 'rb') as file:
+            file_storage = FileStorage(file)
+            summarizer = create_configured_summarizer()
+            summaries = summarizer.summary_from_file(file_storage, 'embedding', 30)
+            with tempfile.NamedTemporaryFile(suffix='.txt') as dest_file:
+                filename = dest_file.name
+                sw = SummaryWriter({'filenames': ['seven_page.pdf'], 'seven_page.pdf': summaries})
+                sw.write_txt(filename)
+
 
 if __name__ == '__main__':
     unittest.main()

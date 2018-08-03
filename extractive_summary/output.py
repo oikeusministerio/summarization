@@ -22,3 +22,20 @@ class SummaryWriter:
 
 
         document.save(destination_path)
+
+    def write_txt(self, destination_path):
+        """
+       Writes summaries to given file in docx format.
+        :return:
+        """
+        text = ''
+        for filename in self.summaries['filenames']:
+            text += filename + '\n\n\n'
+            sections = self.summaries[filename]
+            for title in sections['titles']:
+                text += title + '\n\n'
+                text += sections[title]['summary'] + '\n'
+
+
+        with open(destination_path, 'w') as f:
+            f.write(text)

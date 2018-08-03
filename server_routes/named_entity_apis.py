@@ -1,8 +1,6 @@
 from flask import request, make_response, after_this_request, send_file
-from flask.views import MethodView
-import json
 from server_routes.helpers import return_json
-from extractive_summary.NameExtractor import NameExtractor
+from extractive_summary.ner_extracting import NameExtractor
 from extractive_summary.parsing import DocumentParser, replace_words_in_txt
 from extractive_summary.output import SummaryWriter
 from flask_restplus import Api, Resource, fields
@@ -13,12 +11,14 @@ import requests
 import base64
 import os
 
+ACCEPTED_RETURN_TYPES = ['docx', 'txt']
 
 def configure_named_entities_paths(api, ns):
 
     ner_text_parser = reqparse.RequestParser(bundle_errors=True)
     ner_text_parser.add_argument('content', type=str, help='Text where named entities are extracted', required=True, location='json')
-    ner_text_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",required=True, location='json')
+    ner_text_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.", \
+                                 required=True, location='json', choices=ACCEPTED_RETURN_TYPES)
 
     @ns.doc(params={arg.name: arg.help for arg in ner_text_parser.args})
     @ns.route('', methods=["post"])
@@ -29,6 +29,9 @@ def configure_named_entities_paths(api, ns):
         @ns.expect(ner_text_parser)
         def post(self):
             """
+            Searches named entities from the given text.
+            Using Finnish-dependency parser.
+            (https://en.wikipedia.org/wiki/Named-entity_recognition)
             """
             self.name_extractor = NameExtractor()
 
@@ -65,6 +68,7 @@ def configure_named_entities_paths(api, ns):
                 msg = 'Please ensure that dependency parser is running and the correct port has been configured.'
                 return return_json({'success': False, 'names': [], 'error': msg}, 500)
 
+
     ner_file_parser = reqparse.RequestParser(bundle_errors=True)
     ner_file_parser.add_argument('file-0', type=str, help='At least one file where named entities are extracted', required=True,
                                  location='files')
@@ -80,6 +84,9 @@ def configure_named_entities_paths(api, ns):
         @ns.expect(ner_file_parser)
         def post(self):
             """
+            Searches named entities from the given files.
+            Using Finnish-dependency parser.
+            (https://en.wikipedia.org/wiki/Named-entity_recognition)
             """
             self.name_extractor = NameExtractor()
 
@@ -140,7 +147,8 @@ def configure_named_entities_paths(api, ns):
     replace_parser.add_argument('file-0', type=str, help='At least one file with text to replace.',
                                  required=True, location='files')
     replace_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
-                                 required=True, location='args')
+                                 required=True, location='args',
+                                 choices=ACCEPTED_RETURN_TYPES)
     replace_parser.add_argument('nerlist', type=str, help="Words that should be replaced.",required=True, location='args')
     replace_parser.add_argument('substitutes', type=str, help="What words to use when replacing..", required=True,
                                 location='args')
@@ -160,7 +168,6 @@ def configure_named_entities_paths(api, ns):
             substitutes = [w[1:-1].strip() for w in substitutes[1:-1].split(',')]
 
             return_type = args['return_type']
-            #file_id = request.files[0]
             file = request.files['file-0']
             parser = DocumentParser(file)
             if '.docx' in file.filename:
@@ -176,16 +183,17 @@ def configure_named_entities_paths(api, ns):
             output = {}
             output['output.docx'] = replaced_parsed
             output['filenames'] = ['output.docx']
-            with tempfile.NamedTemporaryFile(suffix='.docx') as t:
-                writer = SummaryWriter(output)
-                writer.write_docx(t.name)
 
-                mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            writer = SummaryWriter(output)
+            with tempfile.NamedTemporaryFile(suffix='.' + return_type) as t:
+                writer_func = {'docx' : writer.write_docx, 'txt': writer.write_txt}
+                writer_func[return_type](t.name)
+
+                mimetypes = {'docx' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                             'txt' : 'text/plain'}
                 return send_file(
                     t.name,
-                    mimetype=mimetype,
+                    mimetype=mimetypes[return_type],
                     as_attachment=True,
-                    attachment_filename='testi.docx'
+                    attachment_filename='testi.' + return_type
                 )
-
-
