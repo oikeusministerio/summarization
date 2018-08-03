@@ -74,6 +74,8 @@ def configure_named_entities_paths(api, ns):
                                  location='files')
     ner_file_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
                                  required=True, location='args')
+    ner_file_parser.add_argument('person_ids', type=bool, help="Should we search person ids as well?.",
+                                 required=True, location='args')
 
     @ns.doc(params={arg.name: arg.help for arg in ner_file_parser.args})
     @ns.route('/directory', methods=["post"])
@@ -89,8 +91,11 @@ def configure_named_entities_paths(api, ns):
             (https://en.wikipedia.org/wiki/Named-entity_recognition)
             """
             self.name_extractor = NameExtractor()
+            args = ner_file_parser.parse_args()
 
-            return_type = request.args['return_type']
+            return_type = args['return_type']
+            search_person_ids = args['person_ids']
+
             filenames = []
             file_contents = {}
             for file_id in request.files:
@@ -109,7 +114,8 @@ def configure_named_entities_paths(api, ns):
                 file_contents[file.filename] = text
 
             try:
-                results = self.name_extractor.extract_names_directory(file_contents, filenames)
+                max_words = 100 if return_type == 'png' else 1000
+                results = self.name_extractor.extract_names_directory(file_contents, filenames, search_person_ids, names_max_N=max_words)
                 graph_data = {}
                 for i, filename in enumerate(filenames):
                     graph_data[filename] = results[i]

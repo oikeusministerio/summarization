@@ -166,6 +166,15 @@ class TestNameExtractor(unittest.TestCase):
         os.remove(graph_file)
         self.assertFalse(os.path.isfile(graph_file))
 
+    def test_extracting_person_ids(self):
+        ne = NameExtractor()
+        well_formed = ['123456-7890', '270272-000D', '191109AX932']
+        unvalids = ['12345678910', '270101Ab111']
+        text = '''
+            Listataan kelpoja: {} Ja huonoja {}
+        '''.format(' '.join(well_formed), '  '.join(unvalids))
+        self.assertEquals(ne._extract_person_ids(text), well_formed)
+
 def create_configured_summarizer():
     with open('config.json', 'r') as f:
         config = json.load(f)
