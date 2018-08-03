@@ -41,20 +41,21 @@ class NameExtractor:
         self.number_mask = re.compile('.*\d.*')
 
     def is_clean(self,word):
-        return not self.number_mask.match(word) and not word.isupper() and len(word) >= 1
+        return not self.number_mask.match(word) and not word.isupper() and len(word) > 1
 
-    def extract_names_directory(self, files, filenames, extract_names_uniformly=True ,names_max_N = 100):
+    def extract_names_directory(self, files, filenames, search_person_ids, extract_names_uniformly=True ,names_max_N = 100):
         """
         Extract in parallel names for each file.
         :param files: dictionary containing file contents.
         :param filenames: list of filenames
+        :param search_person_ids: search finnish person ids (in form 010101-1234)
         :param extract_names_uniformly: Boolean. If true, consider most common names of each file. If two or more files contains
             common names, in the end less than names_max_N names will be returned as duplicates are removed when merging
             the most common of each file.
         :param names_max_N: take only most frequent names, becouse it is difficult to visualize all.
         :return:
         """
-        jobs = [delayed(self.extract_names(files[filename])) for filename in filenames]
+        jobs = [delayed(self.extract_names(files[filename], search_person_ids)) for filename in filenames]
         results = compute(jobs)
         if len(results) == 0:
             return []
@@ -74,7 +75,20 @@ class NameExtractor:
         # filter only most frequent names, without losing order of files.
         return [[name for name in file_result[0] if name in most_popular] for file_result in results]
 
-    def extract_names(self, text):
+    def _extract_person_ids(self, text):
+        """
+        Personid extracted, but not validated. The purpose of this script is not validate id but to search
+        strings that are likeli in same form.
+
+        More information in following:
+
+        https://en.wikipedia.org/wiki/National_identification_number#Finland
+        :param text:
+        :return:
+        """
+        return re.findall('[0-9]{6}[-|+|A][A-Z0-9]{4}', text)
+
+    def extract_names(self, text, search_person_ids = False):
         names = Counter()
         if len(text) == 0:
             return [],[];
@@ -85,6 +99,9 @@ class NameExtractor:
 
         for id_set in np.array_split(np.arange(N), iterations):
             sub_text = ' '.join(sentences[id_set])
+
+            if search_person_ids:
+                names.update(self._extract_person_ids(sub_text))
 
             response = send_to_dependency_parser(self.dependency_parser_url, sub_text)
             data = conll_df(response.text)
