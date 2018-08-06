@@ -15,12 +15,11 @@ ACCEPTED_RETURN_TYPES = ['docx', 'txt']
 
 def configure_named_entities_paths(api, ns):
 
-    ner_text_parser = reqparse.RequestParser(bundle_errors=True)
+    ner_text_parser = ns.parser()
     ner_text_parser.add_argument('content', type=str, help='Text where named entities are extracted', required=True, location='json')
     ner_text_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.", \
                                  required=True, location='json', choices=ACCEPTED_RETURN_TYPES)
 
-    @ns.doc(params={arg.name: arg.help for arg in ner_text_parser.args})
     @ns.route('', methods=["post"])
     @ns.response(404, 'ner not found')
     class NamedEntityAPI(Resource):
@@ -34,9 +33,9 @@ def configure_named_entities_paths(api, ns):
             (https://en.wikipedia.org/wiki/Named-entity_recognition)
             """
             self.name_extractor = NameExtractor()
-
-            text = request.json['content']
-            return_type = request.json['return_type']
+            args = ner_text_parser.parse_args()
+            text = args['content']
+            return_type = args['return_type']
             try:
                 names_found,_ = self.name_extractor.extract_names(text)
                 if return_type == 'png':
@@ -69,7 +68,7 @@ def configure_named_entities_paths(api, ns):
                 return return_json({'success': False, 'names': [], 'error': msg}, 500)
 
 
-    ner_file_parser = reqparse.RequestParser(bundle_errors=True)
+    ner_file_parser = ns.parser()
     ner_file_parser.add_argument('file-0', type=str, help='At least one file where named entities are extracted', required=True,
                                  location='files')
     ner_file_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
@@ -77,7 +76,6 @@ def configure_named_entities_paths(api, ns):
     ner_file_parser.add_argument('person_ids', type=bool, help="Should we search person ids as well?.",
                                  required=True, location='args')
 
-    @ns.doc(params={arg.name: arg.help for arg in ner_file_parser.args})
     @ns.route('/directory', methods=["post"])
     @ns.response(404, 'ner not found')
     class NamedEntityDirectoryAPI(Resource):
@@ -149,7 +147,7 @@ def configure_named_entities_paths(api, ns):
 
 
 
-    replace_parser = reqparse.RequestParser(bundle_errors=True)
+    replace_parser = ns.parser()
     replace_parser.add_argument('file-0', type=str, help='At least one file with text to replace.',
                                  required=True, location='files')
     replace_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
@@ -158,7 +156,6 @@ def configure_named_entities_paths(api, ns):
     replace_parser.add_argument('nerlist', type=str, help="Words that should be replaced.",required=True, location='args')
     replace_parser.add_argument('substitutes', type=str, help="What words to use when replacing..", required=True,
                                 location='args')
-    @ns.doc(params={arg.name: arg.help for arg in replace_parser.args})
     @ns.route('/replace', methods=["post"])
     @ns.response(404, 'ner not found')
     class ReplaceWordsAPI(Resource):

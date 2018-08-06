@@ -18,7 +18,7 @@ def post_text(client, text,summary_length,method):
                                 {"content": text, "summary_length": summary_length,
                                  "method": method, 'return_justification': True}),
                             content_type='application/json')
-    return json.loads(response.data.decode('utf8'))
+    return json.loads(response.data.decode('utf8')), response
 
 def post_file(client, filename, summary_length, method, return_type):
     with open("extractive_summary/test_files/" + filename, 'rb') as f:
@@ -60,16 +60,16 @@ class TestServer(TestCase):
     def test_summarization_embedding(self):
         text = load_data("judgments/data/", N=10).iloc[8]['text']
         summary_length = 200
-        response_json = post_text(self.client, text, summary_length, "embedding")
+        response_json,_ = post_text(self.client, text, summary_length, "embedding")
         summary = response_json['summary']
         first_sentence = summary.split('.')[0]
         self.assertTrue(first_sentence in text)
 
     def test_summarization_graph(self):
         summary_length = 350
-        with open('short_test_judgment.txt') as f:
+        with open('extractive_summary/test_files/short_test_judgment.txt') as f:
             text = f.read()
-        response_json = post_text(self.client, text, summary_length, "graph")
+        response_json,_ = post_text(self.client, text, summary_length, "graph")
         self.assertTrue('summary' in response_json)
         summary = response_json['summary']
         first_word = summary.split(' ')[0]
@@ -131,6 +131,14 @@ class TestServer(TestCase):
         filesnames = ['normal_text.txt', 'average_sized_text.txt']
         response = post_multiple_files(self.client, filesnames, 15, 'graph', 'png')
         self.assertLess(1000, len(response)) # testing that not None and has something inside
+
+    def test_toolong_exception(self):
+        filename = 'too_long_text.txt'
+        with open('extractive_summary/test_files/' + filename) as f:
+            text = f.read()
+            _,response = post_text(self.client, text, 10, "graph")
+            self.assertEquals(response.status_code, 400)
+
 
 if __name__ == '__main__':
     unittest.main()

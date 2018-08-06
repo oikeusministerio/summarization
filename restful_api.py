@@ -20,8 +20,8 @@ UPLOAD_FOLDER = '/tmp/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-api = Api(app, version='1.0', title='',
-    description='',
+api = Api(app, version='1.0', title='NLP-application',
+    description='App can create extractive summarizes and extract named entities for finnish documents.',
 )
 
 configure_summarize_paths(api, api.namespace('summarize', description='Summarize operations'))

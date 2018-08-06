@@ -24,27 +24,16 @@ def custom_send_file(file, mimetype, name):
     return response
 
 def handle_response(return_type, result):
-    if return_type == 'json':
-        return return_json(result, 201)
-    elif return_type == 'docx':
-        sw = SummaryWriter(result)
-        with tempfile.NamedTemporaryFile(suffix='.docx') as t:
-            sw.write_docx(t.name)
-            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            return send_file(
-                t.name,
-                mimetype=mimetype,
-                as_attachment=True,
-                attachment_filename='testi.docx'
-            )
-    elif return_type == 'png':
-        html = render_template('base.html', data=result)
-        with tempfile.NamedTemporaryFile(suffix='.png') as t:
-            imgkit.from_string(html, t.name, css='static/styles.css')
-            with open(t.name, 'rb') as image_binary:
-                image = base64.b64encode(image_binary.read())
-                mimetype = 'image/png'
-                return custom_send_file(image, mimetype, 'summary.png')
-    else:
-        raise ValueError(
-            'Given return type ' + str(return_type) + ' unknown. Please choose either json, html, docx or png.')
+    writer = SummaryWriter(result)
+    with tempfile.NamedTemporaryFile(suffix='.' + return_type) as t:
+        writer_func = {'docx': writer.write_docx, 'txt': writer.write_txt}
+        writer_func[return_type](t.name)
+
+        mimetypes = {'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                     'txt': 'text/plain'}
+        return send_file(
+            t.name,
+            mimetype=mimetypes[return_type],
+            as_attachment=True,
+            attachment_filename='testi.' + return_type
+        )
