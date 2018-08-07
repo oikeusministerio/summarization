@@ -29,7 +29,7 @@ def post_file(client, filename, summary_length, method, return_type):
     response = client.post('/summarize/file?summary_length=' + str(summary_length) \
                                 + '&method=' + method
                                 + '&return_type=' + return_type, data=data, content_type='multipart/form-data')
-    return json.loads(response.data.decode('utf8'))
+    return json.loads(response.data.decode('utf8')), response
 
 def post_multiple_files(client, filenames, summary_length, method, return_type):
     data = dict()
@@ -40,8 +40,10 @@ def post_multiple_files(client, filenames, summary_length, method, return_type):
     response = client.post('/summarize/directory?summary_length=' + str(summary_length) \
                                 + '&method=' + method
                                 + '&return_type=' + return_type, data=data, content_type='multipart/form-data')
-    if return_type == 'png':
-        return response.data
+
+    return response
+
+def decode_json(response):
     return json.loads(response.data.decode('utf8'))
 
 class TestServer(TestCase):
@@ -83,17 +85,9 @@ class TestServer(TestCase):
             for method in methods:
                 print(summary_length)
                 print(method)
-                response_json = post_multiple_files(self.client, filenames, summary_length, method, 'json')
-                self.assertTrue(response_json['success'])
-                self.assertTrue('filenames' in response_json )
-                for fn in response_json['filenames']:
-                    file_summary = response_json[fn]
-                    self.assertTrue('titles' in file_summary)
-                    for title in file_summary['titles']:
-                        summary = file_summary[title]['summary']
-                        if len(summary) > 0:
-                            first_word = summary.split(' ')[0]
-                            self.assertTrue(first_word in summary)
+                response = post_multiple_files(self.client, filenames, summary_length, method, 'txt')
+                self.assertEquals(response.status_code, 200)
+                # more things could be tested, but as the result is validated manually, let's not use more time for unittesting
 
     def test_summarization_with_txt(self):
         summary_lengths = [50, 100,200]
@@ -103,34 +97,8 @@ class TestServer(TestCase):
             for method in methods:
                 print(summary_length)
                 print(method)
-                response_json = post_multiple_files(self.client, filenames, summary_length, method, 'json')
-                self.assertTrue(response_json['success'])
-                self.assertTrue('filenames' in response_json)
-                for fn in response_json['filenames']:
-                    file_summary = response_json[fn]
-                    self.assertTrue('titles' in file_summary)
-                    for title in file_summary['titles']:
-                        summary = file_summary[title]['summary']
-                        if len(summary) > 0:
-                            first_word = summary.split(' ')[0]
-                            self.assertTrue(first_word in summary)
-
-    def test_multifile_summarization_json(self):
-        filesnames = ['normal_text.txt', 'average_sized_text.txt']
-        response_json = post_multiple_files(self.client, filesnames, 15, 'graph', 'json')
-        for fn in response_json['filenames']:
-            file_summary = response_json[fn]
-            self.assertTrue('titles' in file_summary)
-            for title in file_summary['titles']:
-                summary = file_summary[title]['summary']
-                if len(summary) > 0:
-                    first_word = summary.split(' ')[0]
-                    self.assertTrue(first_word in summary)
-
-    def test_multifile_summarization_png(self):
-        filesnames = ['normal_text.txt', 'average_sized_text.txt']
-        response = post_multiple_files(self.client, filesnames, 15, 'graph', 'png')
-        self.assertLess(1000, len(response)) # testing that not None and has something inside
+                response = post_multiple_files(self.client, filenames, summary_length, method, 'txt')
+                self.assertEquals(response.status_code, 200)
 
     def test_toolong_exception(self):
         filename = 'too_long_text.txt'
