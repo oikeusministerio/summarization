@@ -57,10 +57,10 @@ class GraphBasedSummary:
         """
         # ensure that we can choose any of the sentences
         word_count = np.max([word_count, self.sentences['lengths'].max()])
-        text = "\n".join(self.sentences['sentence'])
+        text = "\n ".join(self.sentences['sentence'])
         if self.sentences.shape[0] < 3: # no sense of summarizing such a short text
             return self.sentences['sentence'],np.arange(self.sentences.shape[0]) + 1
         selected_sentences = summarizer.summarize(text, word_count=word_count, split=True)
         if len(selected_sentences) == 0:
-            return [],[]
+            return self.sentences['sentence'], np.arange(self.sentences.shape[0]) + 1
         return selected_sentences, self.get_positions(selected_sentences)

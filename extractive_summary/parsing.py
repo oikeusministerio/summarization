@@ -50,7 +50,6 @@ def replace_words_in_txt(parsed_document, titles, word_list, substitutes):
             replaced_document[title]['summary'] = replaced_document[title]['summary'].replace(w, substitutes[i])
     return replaced_document
 
-
 class DocumentParser:
 
     txt_section_split_by = "\n[ ]*\n"  # txt parsing uses this regex to find double newlines with space between
@@ -94,6 +93,7 @@ class DocumentParser:
         """
         return ' '.join([paragraph.text for paragraph  in Document(self.file).paragraphs])
 
+
     def parse_txt(self, text, section_min_sentence=50, sections_max_length=175):
         """
         File is splitted by two newlines, that might have spaces between them.
@@ -103,76 +103,9 @@ class DocumentParser:
         :param section_min_sentence:
         :return: parsed txt file
         """
-        sents = [s for s in sentence_tokenize(text) if len(s) > 2]
-        total_sents = len(sents)
-        if total_sents < section_min_sentence:  # all text will fit in one section
-            parsed_document = {}
-            modified_text = self.text.replace('\n', '.').replace('..', '.')
-            # do tokenizing again to verify, that title contains no newlines
-            sents = [s for s in sentence_tokenize(modified_text) if len(s) > 2]
-            title = sents[0]
-            parsed_document[title] = " ".join(sents[1:])
-            return parsed_document, [title]
-
-        rx_seq = re.compile(DocumentParser.txt_section_split_by)
-        sections = rx_seq.split(str(text))
-        sections = [s for s in sections if len(s.strip()) > 2]
-        sections_N = len(sections)
-        parsed_document = {}
-        headings_candidates = []
-        titles = []
-
-        is_heading = lambda x: len(sentence_tokenize(x)) == 1
-        for i, section in enumerate(sections[:-1]):  # last one cannot be heading
-            if is_heading(section):
-                headings_candidates.append((i, section.strip()))
-
-        sents_lengths, sents_left = count_sentences_left(sections)
-
-        if len(headings_candidates) == 0:  # take first sentence as a title
-            current_section = ''
-            for i, section in enumerate(sections):
-                current_section += section
-                section_sents = sentence_tokenize(current_section)
-                if len(section_sents) >= 2:
-                    title = section_sents[0]
-                    parsed_document[title] = ' '.join(section_sents[1:])
-                    titles.append(title)
-                    current_section = ''
-            if current_section != '':
-                parsed_document[titles[-1]] += current_section
-
-        last_section_used = -1
-        for heading_i, item in enumerate(headings_candidates):
-            i, _ = item
-            if i < last_section_used:
-                continue
-            j = 1
-            section = sections[i + j]
-            section_sents = sents_lengths[i + j]
-            if i + j + 1 < sections_N and sents_left[
-                i + j + 1] < section_min_sentence:  # this means there are not enough characters/sentences to make full section.
-                while i + j + 2 < sections_N:
-                    j += 1
-                    section += sections[i + j]
-                    section_sents += sents_lengths[i + j]
-            else:
-                while section_sents < section_min_sentence and i + j + 2 < sections_N:
-                    j += 1
-                    section += sections[i + j]
-                    section_sents += sents_lengths[i + j]
-
-            title = sections[i].strip()
-            if title in parsed_document:
-                title += '_'
-            parsed_document[title] = section
-            titles.append(title)
-            last_section_used = i + j
-
-        while last_section_used < sections_N - 1:
-            last_section_used += 1
-            parsed_document[titles[-1]] += sections[last_section_used]
-
+        titles = self.get_titles(text)
+        parsed_document = self.split_text_by_titles(text, titles)
+        parsed_document['titles'] = titles
         parsed_document, titles = split_too_long_sections(parsed_document, titles, sections_max_length,
                                                           section_min_sentence)
 
@@ -212,28 +145,27 @@ class DocumentParser:
 
     def parse_pdf_file(self, section_min_sentence=50, sections_max_length=175):
         text = self.read_pdf_document()
-        rx_seq = re.compile(DocumentParser.txt_section_split_by)
-        sections = rx_seq.split(str(text))
-        sections = [s for s in sections if len(s) > 0]
+        titles = self.get_titles(text)
 
-        titles = []
-        parsed_document = {}
-        i = 0
-        while i < len(sections):
-            section = sections[i]
-            title = [l for l in section.splitlines() if len(l) > 1][0]
-            rest = section[len(title):]
-            title = title.strip()
-            if len(rest) < len(title): # title should be shorter than other section
-                rest = rest + ' ' + sections[i + 1]
-                i += 1
-            parsed_document[title] = rest
-            titles.append(title)
-            i += 1
+        parsed_document = self.split_text_by_titles(text, titles)
 
-        #import pdb
-        #pdb.set_trace()
         parsed_document['titles'] = titles
         parsed_document, titles = split_too_long_sections(parsed_document, titles, sections_max_length,
                                                           section_min_sentence)
         return parsed_document, titles
+
+    def get_titles(self, text):
+        lines = [line.strip() for line in re.split('\n', text)]
+        return [line for i, line in enumerate(lines)
+                if (i >= 1 and lines[i - 1] == '' and len(line) > 0 and not line.endswith('.'))]
+
+    def split_text_by_titles(self,text,titles):
+        title_starts = np.array([text.find(title) for title in titles])
+        title_lens = np.array([len(t) for t in titles])
+        section_starts = title_starts + title_lens
+        section_ends = np.append(title_starts[1:], np.array([len(text)]))
+
+        parsed_document = {}
+        for i in range(len(titles)):
+            parsed_document[titles[i]] = text[section_starts[i]:section_ends[i]]
+        return parsed_document
