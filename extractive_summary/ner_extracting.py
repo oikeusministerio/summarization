@@ -5,7 +5,7 @@ from tools.conll_to_df import conll_df
 from tools.tools import get_config
 import numpy as np
 import re
-from graphviz import Digraph
+#from graphviz import Digraph
 from dask import delayed, compute
 from collections import Counter
 from nltk import sent_tokenize
