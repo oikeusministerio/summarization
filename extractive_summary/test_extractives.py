@@ -151,20 +151,20 @@ class TestNameExtractor(unittest.TestCase):
             self.assertTrue('Jack Bauer' in results2[i])
             self.assertTrue('Virtanen' in results2[i])
 
-    def test_drawing_graph(self):
-        extractor = NameExtractor()
-        files = {'filenames':['filu1.docx', 'kakkos-filu.txt'], 'filu1.docx':['Hessu', 'Heluna'], 'kakkos-filu.txt':['Heluna', 'Musta-Pekka']}
-
-        with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
-            filename = tmp_file.name
-            graph_file = extractor.create_graph(tmp_file.name,files)
-            self.assertTrue(os.path.isfile(filename))
-            self.assertTrue(os.path.isfile(graph_file))
-
-        self.assertFalse(os.path.isfile(filename))
-        self.assertTrue(os.path.isfile(graph_file))
-        os.remove(graph_file)
-        self.assertFalse(os.path.isfile(graph_file))
+    # def test_drawing_graph(self):
+    #     extractor = NameExtractor()
+    #     files = {'filenames':['filu1.docx', 'kakkos-filu.txt'], 'filu1.docx':['Hessu', 'Heluna'], 'kakkos-filu.txt':['Heluna', 'Musta-Pekka']}
+    #
+    #     with tempfile.NamedTemporaryFile(suffix='.gv') as tmp_file:
+    #         filename = tmp_file.name
+    #         graph_file = extractor.create_graph(tmp_file.name,files)
+    #         self.assertTrue(os.path.isfile(filename))
+    #         self.assertTrue(os.path.isfile(graph_file))
+    #
+    #     self.assertFalse(os.path.isfile(filename))
+    #     self.assertTrue(os.path.isfile(graph_file))
+    #     os.remove(graph_file)
+    #     self.assertFalse(os.path.isfile(graph_file))
 
     def test_extracting_person_ids(self):
         ne = NameExtractor()

@@ -111,6 +111,7 @@ of docker-compose.yml is enough. Verify that you have docker and docker-compose 
 Now please verify, that the ports in docker-compose.yml are configured correctly.
 The application uses two ports of the system, defined in docker-compose for service 'server'. So change the 
 host ports to some free ports in your system. Please modify also the variable APIURL in docker-compose.yml. It should
+ 
  point to public address of service, that maps to servers container port 5000. For example, it 
 could be 'http://example-service.io' if this is the public address of server's container port 5000.
 

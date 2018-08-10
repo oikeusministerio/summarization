@@ -16,6 +16,4 @@ gensim
 dask[dataframe]
 dask[distributed]
 imgkit
-graphviz
-textract
 matplotlib

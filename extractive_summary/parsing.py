@@ -5,7 +5,7 @@ from nltk import sent_tokenize
 import pandas as pd
 import re
 from tools.tools import sentence_tokenize
-import textract
+from tools.pdf_parser import PdfParser
 from tempfile import NamedTemporaryFile
 import os
 
@@ -134,7 +134,8 @@ class DocumentParser:
             filename = tmp_file.name
 
             self.file.save(filename)
-            raw_text = textract.process(filename, layout=True)
+            parser = PdfParser()
+            raw_text = parser.extract(filename, layout=True)
             text_without_pagebreaks = raw_text.replace(b'\x0c', b' ')
 
             text = text_without_pagebreaks.decode('utf-8')
