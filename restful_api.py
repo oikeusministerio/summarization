@@ -1,18 +1,16 @@
 
+import sys
 from flask import Flask, request
 from flask_restplus import Api, Resource, fields
-from flask_restful import reqparse
-from werkzeug.datastructures import FileStorage
 import logging
-import json
 
 # prepare nltk
 import nltk
 nltk.download('punkt') # this one installs rules for punctuation
 
 #inner imports
-from server_routes.summary_apis import configure_summarize_paths
-from server_routes.named_entity_apis import configure_named_entities_paths
+#from server_routes.summary_apis import configure_summarize_paths
+#from server_routes.named_entity_apis import configure_named_entities_paths
 
 app = Flask(__name__)
 
@@ -24,8 +22,8 @@ api = Api(app, version='1.0', title='NLP-application',
     description='App can create extractive summarizes and extract named entities for finnish documents.',
 )
 
-configure_summarize_paths(api, api.namespace('summarize', description='Summarize operations'))
-configure_named_entities_paths(api, api.namespace('entities', description='NER operations'))
+#configure_summarize_paths(api, api.namespace('summarize', description='Summarize operations'))
+#configure_named_entities_paths(api, api.namespace('entities', description='NER operations'))
 
 @app.before_first_request
 def setup_logging():

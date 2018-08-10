@@ -7,7 +7,7 @@ import re
 def convert_texts_to_indexes(texts, dictionary, N_orig, N_target, take_all=False):
     """
     Texts should be pandas.DataFrame containing texts to handle.
-    Dictionary is a dict that contains used vocabylary.
+    Dictionary is a dict that contains used vocabulary.
     """
     word_splitting = lambda t : [w for w in word_tokenize(t.strip().lower()) \
                                  if len(w) > 1 and re.match('[^0-9]', w) and w in dictionary]

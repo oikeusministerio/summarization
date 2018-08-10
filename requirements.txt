@@ -1,12 +1,13 @@
 SPARQLWrapper
+Cython
 numpy
-pandas
+pandas; python_version >= '3.5'
+pandas<0.21; python_version == '3.4'
 scipy
 scikit-learn
 nltk
 Flask
 flask_restful
-flask-swagger
 flask-restplus
 python-docx
 Flask-Testing

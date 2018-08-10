@@ -17,3 +17,7 @@ judgments/test_data/*
 *.gv.pdf
 embeddings/source_data/*
 nohup.out
+packages.zip
+packages.zip
+packages
+judgments/learning_data

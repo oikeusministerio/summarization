@@ -1,5 +1,8 @@
 
-from flask import Flask, jsonify,request, send_from_directory, send_file
+import sys
+if not ('packages.zip' in sys.path):
+    sys.path.insert(0, 'packages.zip')
+from flask import Flask, request, send_from_directory
 import logging
 import json
 import os
