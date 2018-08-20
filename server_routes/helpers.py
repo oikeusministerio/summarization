@@ -1,15 +1,14 @@
 
-from flask import  render_template, make_response, send_file
+from flask import make_response, send_file
 import json
 from extractive_summary.output import SummaryWriter
-import imgkit
 import tempfile
-import base64
+import os
 
 from extractive_summary.Summarizer import Summarizer
 
 def create_configured_summarizer():
-    with open('config.json', 'r') as f:
+    with open(os.path.abspath('config.json'), 'r') as f:
         config = json.load(f)
         return Summarizer(config)
 

@@ -3,10 +3,14 @@ import sys
 from flask import Flask, request
 from flask_restplus import Api, Resource, fields
 import logging
+import os
 
 # prepare nltk
-import nltk
-nltk.download('punkt') # this one installs rules for punctuation
+#import nltk
+#nltk.download('punkt') # this one installs rules for punctuation
+
+# Set the root to current working directory
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 #inner imports
 from server_routes.summary_apis import configure_summarize_paths
@@ -46,7 +50,7 @@ def after_request(response):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=False,host='0.0.0.0', port=7001)
+    app.run(debug=False,host='0.0.0.0', port=5000)
 
 def get_app():
     return app
