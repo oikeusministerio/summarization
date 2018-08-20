@@ -1,5 +1,5 @@
 
-import json
+import os
 import requests
 from tools.conll_to_df import conll_df
 from tools.tools import get_config
@@ -55,6 +55,7 @@ class NameExtractor:
         :param names_max_N: take only most frequent names, becouse it is difficult to visualize all.
         :return:
         """
+
         jobs = [delayed(self.extract_names(files[filename], search_person_ids)) for filename in filenames]
         results = compute(jobs)
         if len(results) == 0:

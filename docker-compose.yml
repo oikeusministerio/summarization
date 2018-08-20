@@ -8,8 +8,9 @@ services:
     build: .
     image: "samutamm/summarization_server"
     ports:
-     - "5000:5000" # HOST_PORT : CONTAINER_PORT. Host port can be changed to anything, but it should correspond APIURL environment variable
+     - "7001:7001" # HOST_PORT : CONTAINER_PORT. Host port can be changed to anything, but it should correspond APIURL environment variable
      - "7000:7000" # HOST_PORT : CONTAINER_PORT. Host port can be anything.
     environment:
+    - RUNNING_IN_CONTAINER=True
     - FLASK_ENV=production
-    - APIURL=http://127.0.0.1:5000 # This should point towards api that is exposed from port 5000 in container.
+    - APIURL=http://127.0.0.1:7001 # This should point towards api that is exposed from port 5000 in container.
