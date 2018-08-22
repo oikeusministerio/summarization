@@ -4,7 +4,7 @@ Automated summarization of legal texts
 ## Installation
 Most of the requirements are listed in requirements.txt and can be installed by
 ```
-python3 -m pip install --user -r requirements.txt
+pip install -r requirements.txt
 ```
 or with Anaconda (not tested).
 Also following binary-packages should be installed :
@@ -20,10 +20,7 @@ by executing:
 docker pull kazhar/finnish-dep-parser
 ```
 
-For graph visualisations, please install Graphviz
-```bash
-sudo apt install python-pydot python-pydot-ng graphviz
-```
+
 PDF reading modules requires installing following packages
 ```bash
 sudo apt-get install poppler-utils
@@ -102,23 +99,9 @@ You can go localhost:5000 to access Swagger-UI or localhost:7000 to acces the us
 docker-compose up --build
 ```
 
-### Start server in production
-
-Create a empty folder and copy docker-compose.yml there. So you will not need to download the source code, the content 
-of docker-compose.yml is enough. Verify that you have docker and docker-compose installed.
-
-Now please verify, that the ports in docker-compose.yml are configured correctly.
-The application uses two ports of the system, defined in docker-compose for service 'server'. So change the 
-host ports to some free ports in your system. Please modify also the variable APIURL in docker-compose.yml. It should
- 
- point to public address of service, that maps to servers container port 5000. For example, it 
-could be 'http://example-service.io' if this is the public address of server's container port 5000.
-
-Then run
-```bash
-docker-compose pull & docker-compose up
-```
-
+Attention! No production servers are configured, please follow  
+http://flask.pocoo.org/docs/1.0/tutorial/deploy/
+if you want to use it in production.
 
 ## Run tests
 Start dependency parser before running tests

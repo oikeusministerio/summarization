@@ -54,7 +54,6 @@ def configure_summarize_paths(api, ns):
     multi_file_parser.add_argument('file-0', type=FileStorage, location='files', help="At least one file containing text to handle.", required=True)
     multi_file_parser.add_argument('return_type', type=str, choices=('txt', 'docx'), help="Return type to define, what server will return.", required=True, location='args')
 
-    #@ns.doc(params={arg.name : arg.help  for arg in multi_file_parser.args})
     @ns.route('/directory', methods=["post"])
     @ns.response(404, 'summary not found')
     class MultiFileSummarize(Resource):

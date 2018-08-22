@@ -5,9 +5,12 @@ from flask_restplus import Api, Resource, fields
 import logging
 import os
 
-# prepare nltk
-#import nltk
-#nltk.download('punkt') # this one installs rules for punctuation
+# prepare nltk - we need rules for punctuation
+import nltk
+if 'NLTK_PATH' in os.environ:
+    nltk.path.append(os.environ['NLTK_PATH'])
+else:
+    nltk.download('punkt')
 
 # Set the root to current working directory
 os.chdir(os.path.dirname(os.path.realpath(__file__)))

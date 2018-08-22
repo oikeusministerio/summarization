@@ -37,5 +37,5 @@ class SummaryWriter:
                 text += sections[title]['summary'] + '\n'
 
 
-        with open(destination_path, 'w') as f:
-            f.write(text)
+        with open(destination_path, 'wb') as f:
+            f.write(text.encode('utf-8'))

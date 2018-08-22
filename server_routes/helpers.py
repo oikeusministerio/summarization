@@ -13,7 +13,7 @@ def create_configured_summarizer():
         return Summarizer(config)
 
 def return_json(dumped_json, code):
-    return dumped_json, code, {'ContentType': 'application/json'}
+    return dumped_json, code, {'Content-Type': 'application/json; charset=utf-8'}
 
 def custom_send_file(file, mimetype, name):
     response = make_response(file)
