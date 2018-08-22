@@ -4,7 +4,7 @@ from extractive_summary.ner_extracting import NameExtractor
 from extractive_summary.parsing import DocumentParser, replace_words_in_txt
 from extractive_summary.output import SummaryWriter
 from flask_restplus import Api, Resource, fields
-from flask_restful import reqparse
+from werkzeug.datastructures import FileStorage
 
 import tempfile
 import requests
@@ -15,7 +15,7 @@ ACCEPTED_RETURN_TYPES = ['docx', 'txt']
 
 def configure_named_entities_paths(api, ns):
 
-    ner_text_parser = ns.parser()
+    ner_text_parser = api.parser()
     ner_text_parser.add_argument('content', type=str, help='Text where named entities are extracted', required=True, location='json')
     ner_text_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.", \
                                  required=True, location='json', choices=ACCEPTED_RETURN_TYPES)
@@ -68,10 +68,10 @@ def configure_named_entities_paths(api, ns):
                 return return_json({'success': False, 'names': [], 'error': msg}, 500)
 
 
-    ner_file_parser = ns.parser()
-    ner_file_parser.add_argument('file-0', type=str, help='At least one file where named entities are extracted', required=True,
+    ner_file_parser = api.parser()
+    ner_file_parser.add_argument('file-0', type=FileStorage, help='At least one file where named entities are extracted', required=True,
                                  location='files')
-    ner_file_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
+    ner_file_parser.add_argument('return_type', type=str, help="Return type: what server will return.",
                                  required=True, location='args')
     ner_file_parser.add_argument('person_ids', type=bool, help="Should we search person ids as well?.",
                                  required=True, location='args')
@@ -147,8 +147,8 @@ def configure_named_entities_paths(api, ns):
 
 
 
-    replace_parser = ns.parser()
-    replace_parser.add_argument('file-0', type=str, help='At least one file with text to replace.',
+    replace_parser = api.parser()
+    replace_parser.add_argument('file-0', type=FileStorage, help='At least one file with text to replace.',
                                  required=True, location='files')
     replace_parser.add_argument('return_type', type=str, help="Return type to define, what server will return.",
                                  required=True, location='args',
