@@ -132,33 +132,3 @@ class NameExtractor:
         #unique_names = skip_allmost_duplicates(list(names.keys()))
         unique_names = [n for n in  unique_names if len(n) > 1]
         return unique_names, [names[n] for n in unique_names]
-
-    # def create_graph(self, destination_file, graph_data, image_format = 'png'):
-    #     """
-    #     :param destination_file: Temporary file, when using with clause it is removed automatically.
-    #     It is used to create graph in pdf/png/svg format.
-    #     :param graph_data: contains graph_data and their extracted names to be visualized
-    #     :return: path to created graph file. ATTENTION! Remember to delete this file after sent to user.
-    #     """
-    #     attrs = {'size': "20,20",'overlap':'false'}
-    #     dot = Digraph(comment='Nimet eri tiedostoissa.', graph_attr=attrs, engine='neato')
-    #     dot.format = image_format
-    #     person_to_file = {}
-    #     for i, fn in enumerate(graph_data['filenames']):
-    #         id = 'f-' + str(i)
-    #         dot.node(id, fn, color='red')
-    #         for j, person in enumerate(graph_data[fn]):
-    #             if person in person_to_file:
-    #                 person_to_file[person].append(id)
-    #             else:
-    #                 person_to_file[person] = [id]
-    #
-    #     for i,person in enumerate(person_to_file.keys()):
-    #         id = 'p-'+ str(i)
-    #         dot.node(id, person, color='blue')
-    #
-    #         for file_id in person_to_file[person]:
-    #             dot.edge(id, file_id)
-    #
-    #     dot.render(destination_file)
-    #     return destination_file + '.' + image_format
