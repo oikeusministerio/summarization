@@ -28,7 +28,7 @@ locket==0.2.0
 lxml==4.2.4
 MarkupSafe==1.0
 matplotlib==2.2.2
-nltk==3.3
+nltk==3.4.5
 numpy==1.15.0
 pandas==0.23.4
 partd==0.3.8
