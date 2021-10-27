@@ -9,7 +9,7 @@ click==6.7
 cloudpickle==0.5.3
 cycler==0.10.0
 Cython==0.28.5
-dask==0.18.2
+dask==2021.10.0
 docutils==0.14
 Flask==1.0.2
 Flask-RESTful==0.3.6
