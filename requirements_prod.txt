@@ -29,7 +29,7 @@ lxml==4.2.4
 MarkupSafe==1.0
 matplotlib==2.2.2
 nltk==3.3
-numpy==1.15.0
+numpy==1.22.0
 pandas==0.23.4
 partd==0.3.8
 pyparsing==2.2.0
